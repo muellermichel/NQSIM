@@ -18,6 +18,9 @@ class Node(object):
 			self.incoming_links
 		)
 
+	def add_incoming_link(self, link):
+		self.incoming_links.append(link)
+
 	def add_outgoing_link(self, link):
 		self.outgoing_links.append(link)
 		self.outgoing_links_by_identifier[link.id] = link
@@ -29,13 +32,17 @@ class Node(object):
 	def route(self):
 		for link in self.incoming_links:
 			current_agent = link.peak()
-			while current_agent:
+			while current_agent and current_agent.current_travel_time >= current_agent.time_to_pass_link:
 				next_link_id = None
 				if current_agent.plan:
-					next_link_id = current_agent.plan.popleft()
+					next_link_id = str(current_agent.plan.popleft())
 					next_link = self.outgoing_links_by_identifier.get(next_link_id)
 					if not next_link:
-						raise NodeException("invalid plan: link %i not available from node %r" %(next_link_id, self))
+						raise NodeException("invalid plan for agent %s: link %s not available on node; outgoing: %s" %(
+							current_agent,
+							next_link_id,
+							[str(l) for l in self.outgoing_links]
+						))
 					if not next_link.is_accepting:
 						break
 					next_link.add(current_agent)

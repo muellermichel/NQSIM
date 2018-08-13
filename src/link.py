@@ -6,7 +6,7 @@ class LinkException(Exception):
 
 class Link(object):
 	def __init__(self, identifier, length, free_flow_velocity, queue=[]):
-		self.id = identifier
+		self.id = str(identifier)
 		self.length = length
 		self.free_flow_velocity = free_flow_velocity
 		self.q = deque(queue)
@@ -19,10 +19,16 @@ class Link(object):
 		self.jam_travel_time = length / constants.JAM_VELOCITY
 
 	def __str__(self):
-		return "%s:%r" %(self.__class__.__name__, self.__dict__)
+		return "%s{l%i, cap%i, v%i, n%i}" %(
+			self.id,
+			self.length,
+			self.free_flow_capacity,
+			self.free_flow_velocity,
+			len(self.q)
+		)
 
 	def __repr__(self):
-		return "%s(%s, %i, %i, %r)" %(
+		return "%s('%s', %i, %i, %r)" %(
 			self.__class__.__name__,
 			self.id,
 			self.length,
@@ -48,9 +54,7 @@ class Link(object):
 		if len(self.q) == 0:
 			return None
 		current_agent = self.q[0]
-		if current_agent.current_travel_time >= current_agent.time_to_pass_link:
-			return current_agent
-		return None
+		return current_agent
 
 	def add(self, agent):
 		if len(self.q) < self.free_flow_capacity:
@@ -66,10 +70,10 @@ class Link(object):
 	def remove_first_waiting(self):
 		to_be_removed = self.peak()
 		if not to_be_removed:
-			raise LinkException("no agent waiting")
+			raise LinkException("no agent waiting on link %s" %(self.id))
 		popped = self.q.popleft()
 		if not popped is to_be_removed:
-			raise LinkException("this should not happen: peak is not first waiting")
+			raise LinkException("this should not happen: peak is not first waiting on link %s" %(self.id))
 		popped.current_travel_time = 0
 		return popped
 

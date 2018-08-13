@@ -1,17 +1,20 @@
+import logging
+from node import NodeException
 from world import World
-from node import Node
-from link import Link
-from agent import Agent
+from chinese_capital import ChineseCapital
 
-world = World(
-	agents=[
-		Agent(), Agent(), Agent()
-	],
-	nodes=[]
-)
+logging.basicConfig(level=logging.DEBUG)
+try:
+	chinese_capital = ChineseCapital(3)
+	world = World(sum(chinese_capital.node_board, []))
+	chinese_capital.add_agents(1000)
+	world.plot()
+	for _ in range(10):
+		world.tick(10)
+		world.plot()
+except NodeException as e:
+	print(e)
+	print(world)
 
-for time in range(100):
-	logging.message("time: %i" %(time))
-	world.tick(1)
 
-print(world)
+

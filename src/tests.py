@@ -5,6 +5,7 @@ from world import World
 from node import Node
 from link import Link
 from agent import Agent
+from chinese_capital import ChineseCapital
 
 class TestNQSIMTwoNodes(unittest.TestCase):
 	def setUp(self):
@@ -69,6 +70,13 @@ class TestNQSIMThreeNodes(unittest.TestCase):
 		world_copy.tick(1)
 		self.assertEqual(agent_copy.current_travel_time, 0)
 		self.assertEqual(len(world_copy.nodes[1].outgoing_links[0]), 0)
+
+class TestChineseCapital(unittest.TestCase):
+	def test_repr(self):
+		chinese_capital = ChineseCapital(2)
+		world = World(sum(chinese_capital.node_board, []))
+		chinese_capital.add_agents(1)
+		eval(repr(world))
 
 if __name__ == '__main__':
 	logging.basicConfig(level=logging.INFO)
