@@ -1,8 +1,8 @@
 from collections import deque
 
 class Agent(object):
-	def __init__(self, plan=deque(), current_travel_time=0, time_to_pass_link=0):
-		self.plan = deque(plan) if not isinstance(plan, deque) else plan
+	def __init__(self, plan=[], current_travel_time=0, time_to_pass_link=0):
+		self.plan = deque(plan)
 		self.current_travel_time = current_travel_time
 		self.time_to_pass_link = time_to_pass_link
 

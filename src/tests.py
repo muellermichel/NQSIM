@@ -1,4 +1,5 @@
 import unittest, logging
+from collections import deque
 
 from world import World
 from node import Node
@@ -57,10 +58,18 @@ class TestNQSIMThreeNodes(unittest.TestCase):
 		self.assertEqual(agent.current_travel_time, 9)
 		self.assertEqual(agent.time_to_pass_link, 10)
 		self.assertEqual(len(self.nodes[1].outgoing_links[0]), 1)
+		world_copy = eval(repr(world))
+		agent_copy = world_copy.nodes[1].outgoing_links[0].q[0]
+		self.assertEqual(agent_copy.current_travel_time, 9)
+		self.assertEqual(agent_copy.time_to_pass_link, 10)
+		self.assertEqual(len(world_copy.nodes[1].outgoing_links[0]), 1)
 		world.tick(1)
 		self.assertEqual(agent.current_travel_time, 0)
 		self.assertEqual(len(self.nodes[1].outgoing_links[0]), 0)
+		world_copy.tick(1)
+		self.assertEqual(agent_copy.current_travel_time, 0)
+		self.assertEqual(len(world_copy.nodes[1].outgoing_links[0]), 0)
 
 if __name__ == '__main__':
-	logging.basicConfig(level=logging.DEBUG)
+	logging.basicConfig(level=logging.INFO)
 	unittest.main()

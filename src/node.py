@@ -5,19 +5,22 @@ class NodeException(Exception):
 
 class Node(object):
 	def __init__(self, incoming_links=[], outgoing_links=[]):
-		self.incoming_links = incoming_links
-		self.outgoing_links = outgoing_links
+		self.incoming_links = list(incoming_links)
+		self.outgoing_links = list(outgoing_links)
 		self.outgoing_links_by_identifier = {l.id:l for l in outgoing_links}
 
 	def __str__(self):
 		return "%s:%r" %(self.__class__.__name__, self.__dict__)
 
 	def __repr__(self):
-		return "%s(%r, %r)" %(
+		return "%s(%r)" %(
 			self.__class__.__name__,
-			self.incoming_links,
-			self.outgoing_links
+			self.incoming_links
 		)
+
+	def add_outgoing_link(self, link):
+		self.outgoing_links.append(link)
+		self.outgoing_links_by_identifier[link.id] = link
 
 	def tick(self, delta_t):
 		for link in self.incoming_links:
