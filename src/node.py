@@ -35,7 +35,7 @@ class Node(object):
 			while current_agent and current_agent.current_travel_time >= current_agent.time_to_pass_link:
 				next_link_id = None
 				if current_agent.plan:
-					next_link_id = str(current_agent.plan.popleft())
+					next_link_id = str(current_agent.plan[0])
 					next_link = self.outgoing_links_by_identifier.get(next_link_id)
 					if not next_link:
 						raise NodeException("invalid plan for agent %s: link %s not available on node; outgoing: %s" %(
@@ -45,9 +45,10 @@ class Node(object):
 						))
 					if not next_link.is_accepting:
 						break
+					current_agent.plan.popleft()
 					next_link.add(current_agent)
-				logging.debug("agent with plan %s has crossed over from link %s to %s" %(
-					current_agent.plan,
+				logging.debug("agent %s has crossed over from link %s to %s" %(
+					current_agent,
 					link.id,
 					next_link_id
 				))

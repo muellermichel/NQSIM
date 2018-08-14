@@ -65,7 +65,7 @@ class ChineseCapital(object):
 			curr_row_id = start_row_id
 			curr_col_id = start_col_id
 			plan = []
-			while curr_row_id != end_row_id and curr_col_id != end_col_id:
+			while curr_row_id != end_row_id or curr_col_id != end_col_id:
 				if curr_row_id == end_row_id:
 					change, link_id = next_horicontal(curr_row_id, curr_col_id, end_col_id)
 					curr_col_id += change
@@ -76,7 +76,7 @@ class ChineseCapital(object):
 					curr_row_id += change
 					plan.append(link_id)
 					continue
-				if random.choice([0,1]) == 0:
+				if random.random() < 0.5:
 					change, link_id = next_horicontal(curr_row_id, curr_col_id, end_col_id)
 					curr_col_id += change
 					plan.append(link_id)
@@ -87,27 +87,29 @@ class ChineseCapital(object):
 			return plan
 
 		logging.info("making agent plans")
+		total_num_link_exceptions = 0
 		links_by_id = {l.id:l for l in sum((n.incoming_links for n in sum(self.node_board, [])), [])}
 		for num in range(num_agents):
 			num_link_exceptions = 0
 			while True:
-				start_row_id = random.choice(range(self.edge_length))
-				start_col_id = random.choice(range(self.edge_length))
-				end_row_id = random.choice(range(self.edge_length))
-				end_col_id = random.choice(range(self.edge_length))
+				start_row_id = int(self.edge_length * random.random())
+				start_col_id = int(self.edge_length * random.random())
+				end_row_id = int(self.edge_length * random.random())
+				end_col_id = int(self.edge_length * random.random())
 				plan = deque(make_plan(start_row_id, start_col_id, end_row_id, end_col_id))
 				if len(plan) == 0:
 					continue
 				first_link = links_by_id[plan.popleft()]
 				try:
-					first_link.add(Agent(plan))
+					first_link.add(Agent(plan, identifier=num))
 				except LinkException:
 					num_link_exceptions += 1
+					total_num_link_exceptions += 1
 					if num_link_exceptions > 9:
 						raise ChineseCapitalException(
 							"reduce agents or increase capacity - for agent %i at least 10 attempts to find a free link failed" %(num)
 						)
 				break
-		logging.info("agent plans done")
+		logging.info("agent plans done; number of link exceptions that lead to rerolls: %i" %(total_num_link_exceptions))
 
 
