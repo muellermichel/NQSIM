@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 public class JSONTest {
     void testAgentSerialization() throws IOException {

@@ -78,19 +78,11 @@ public final class Agent {
     }
 
     public byte peekPlan() {
-        Byte next_link_index = this.plan.peek();
-        if (next_link_index != null) {
-            return next_link_index;
-        }
-        return -1;
+        return this.plan.peek();
     }
 
     public byte pollPlan() {
-        Byte next_link_index = this.plan.poll();
-        if (next_link_index != null) {
-            return next_link_index;
-        }
-        return -1;
+        return this.plan.poll();
     }
 
     public long getId() {

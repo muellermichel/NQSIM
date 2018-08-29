@@ -15,6 +15,9 @@ public final class MainTest {
 
             JSONTest test3 = new JSONTest();
             test3.testAgentSerialization();
+
+            ProtostuffTest test4 = new ProtostuffTest();
+            test4.testAgentSerialization();
         }
         catch (Exception e) {
             System.out.println(String.format(

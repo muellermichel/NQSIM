@@ -1,8 +1,6 @@
 package ch.ethz.systems.nqsim;
 
-import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Queue;
 
 public final class Link {
@@ -109,11 +107,11 @@ public final class Link {
     public Agent removeFirstWaiting() throws LinkException {
         Agent to_be_removed = this.peek();
         if (to_be_removed == null) {
-            throw new LinkException(String.format("no agent waiting on link"));
+            throw new LinkException("no agent waiting on link");
         }
         Agent popped = this.q.poll();
         if (popped != to_be_removed) {
-            throw new LinkException(String.format("this should not happen: peek is not first waiting on link"));
+            throw new LinkException("this should not happen: peek is not first waiting on link");
         }
         popped.current_travel_time = 0;
         return popped;

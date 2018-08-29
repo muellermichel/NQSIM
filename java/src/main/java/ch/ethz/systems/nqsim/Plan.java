@@ -1,9 +1,10 @@
 package ch.ethz.systems.nqsim;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 
-public class Plan extends LinkedList<Byte> implements Queue<Byte> {
+public class Plan extends ByteArrayList {
+    private int peekIdx = 0;
+
     public Plan(byte ... byte_plan) {
         super();
         for (byte link_idx:byte_plan) {
@@ -13,5 +14,25 @@ public class Plan extends LinkedList<Byte> implements Queue<Byte> {
 
     public Plan() {
         super();
+    }
+
+    public byte peek() {
+        if (this.peekIdx > super.size() - 1) {
+            return (byte) -1;
+        }
+        return this.get(this.peekIdx);
+    }
+
+    public byte poll() {
+        if (this.peekIdx > super.size() - 1) {
+            return (byte) -1;
+        }
+        byte result = this.get(this.peekIdx);
+        this.peekIdx += 1;
+        return result;
+    }
+
+    public int size() {
+        return super.size() - this.peekIdx;
     }
 }
