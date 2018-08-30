@@ -1,5 +1,8 @@
 package ch.ethz.systems.nqsim;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -8,6 +11,11 @@ import java.util.ListIterator;
 public final class Node {
     private List<Link> incoming_links;
     private List<Link> outgoing_links;
+
+    @JsonCreator
+    public Node(@JsonProperty("incoming_links") List<Link> incoming_links) {
+        this.incoming_links = incoming_links;
+    }
 
     public Node() {
         this.incoming_links = new ArrayList<Link>();

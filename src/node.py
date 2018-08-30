@@ -5,9 +5,10 @@ class NodeException(Exception):
 
 class Node(object):
 	def __init__(self, incoming_links=[], outgoing_links=[]):
-		self.incoming_links = list(incoming_links)
-		self.outgoing_links = list(outgoing_links)
-		self.outgoing_links_by_identifier = {l.id:l for l in outgoing_links}
+		self.__setstate__({
+			"incoming_links":list(incoming_links),
+			"outgoing_links":list(outgoing_links),
+		})
 
 	def __str__(self):
 		return "%s:%r" %(self.__class__.__name__, self.__dict__)
@@ -17,6 +18,16 @@ class Node(object):
 			self.__class__.__name__,
 			self.incoming_links
 		)
+
+	def __getstate__(self):
+		return {
+			"incoming_links": self.incoming_links
+		}
+
+	def __setstate__(self, state):
+		self.incoming_links = state["incoming_links"]
+		self.outgoing_links = state.get("outgoing_links", [])
+		self.outgoing_links_by_identifier = {l.id:l for l in self.outgoing_links}
 
 	def add_incoming_link(self, link):
 		self.incoming_links.append(link)

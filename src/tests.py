@@ -1,5 +1,6 @@
 import unittest, logging
 from collections import deque
+import jsonpickle
 
 from world import World
 from node import Node
@@ -42,6 +43,15 @@ class TestNQSIMThreeNodes(unittest.TestCase):
 		self.nodes = [Node([], [link1]), Node([link1], [link2]), Node([link2], [])]
 
 	def test_single_agent(self):
+		def test_version(world):
+			agent = world.nodes[1].outgoing_links[0].q[0]
+			self.assertEqual(agent.current_travel_time, 9)
+			self.assertEqual(agent.time_to_pass_link, 10)
+			self.assertEqual(len(world.nodes[1].outgoing_links[0]), 1)
+			world.tick(1)
+			self.assertEqual(agent.current_travel_time, 0)
+			self.assertEqual(len(self.nodes[1].outgoing_links[0]), 0)
+
 		agent = Agent([2])
 		self.nodes[0].outgoing_links[0].add(agent)
 		world = World(self.nodes)
@@ -56,21 +66,17 @@ class TestNQSIMThreeNodes(unittest.TestCase):
 		self.assertEqual(len(self.nodes[1].outgoing_links[0]), 1)
 		for time in range(9):
 			world.tick(1)
-		self.assertEqual(agent.current_travel_time, 9)
-		self.assertEqual(agent.time_to_pass_link, 10)
-		self.assertEqual(len(self.nodes[1].outgoing_links[0]), 1)
-		world_copy = eval(repr(world))
-		agent_copy = world_copy.nodes[1].outgoing_links[0].q[0]
-		self.assertEqual(agent_copy.current_travel_time, 9)
-		self.assertEqual(agent_copy.time_to_pass_link, 10)
-		self.assertEqual(len(world_copy.nodes[1].outgoing_links[0]), 1)
-		world.tick(1)
-		self.assertEqual(agent.current_travel_time, 0)
-		self.assertEqual(len(self.nodes[1].outgoing_links[0]), 0)
-		world_copy.tick(1)
-		self.assertEqual(agent_copy.current_travel_time, 0)
-		self.assertEqual(len(world_copy.nodes[1].outgoing_links[0]), 0)
 
+		world_copy = eval(repr(world))
+		oneway = jsonpickle.encode(world, unpicklable=False)
+		with open("test.json", "w") as f:
+			f.write(oneway)
+		world_copy_pickled = jsonpickle.decode(jsonpickle.encode(world))
+
+		test_version(world)
+		test_version(world_copy)
+		test_version(world_copy_pickled)
+		
 class TestChineseCapital(unittest.TestCase):
 	def test_repr(self):
 		chinese_capital = ChineseCapital(2)

@@ -2,16 +2,36 @@ import logging
 
 class World(object):
 	def __init__(self, nodes, outgoing_link_ids_by_node_index={}):
-		self.nodes = nodes
-		links_by_id = {l.id:l for l in sum((n.incoming_links for n in nodes), [])}
-		for node_index, link_ids in outgoing_link_ids_by_node_index.items():
-			for link_id in link_ids:
-				self.nodes[node_index].add_outgoing_link(links_by_id[link_id])
-		self.t = 0
+		self.__setstate__({
+			"nodes": nodes,
+			"outgoing_link_ids_by_node_index": outgoing_link_ids_by_node_index,
+			"t": 0
+		})
 
 	def __repr__(self):
-		outgoing_link_ids_by_node_index = {c:[l.id for l in n.outgoing_links] for c,n in enumerate(self.nodes)}
-		return "%s(%r, %r)" %(self.__class__.__name__, self.nodes, outgoing_link_ids_by_node_index)
+		return "%s(%r, %r)" %(self.__class__.__name__, self.nodes, self.outgoing_link_ids_by_node_index)
+
+	def __getstate__(self):
+		return {
+			"nodes": self.nodes,
+			"outgoing_link_ids_by_node_index": self.outgoing_link_ids_by_node_index,
+			"t": self.t
+		}
+
+	def __setstate__(self, state):
+		self.nodes = state["nodes"]
+		self.t = state["t"]
+		self.setup_outgoing_links(state["outgoing_link_ids_by_node_index"])
+
+	@property
+	def outgoing_link_ids_by_node_index(self):
+		return {c:[l.id for l in n.outgoing_links] for c,n in enumerate(self.nodes)}
+
+	def setup_outgoing_links(self, outgoing_link_ids_by_node_index):
+		links_by_id = {l.id:l for l in sum((n.incoming_links for n in self.nodes), [])}
+		for node_index, link_ids in outgoing_link_ids_by_node_index.items():
+			for link_id in link_ids:
+				self.nodes[int(node_index)].add_outgoing_link(links_by_id[link_id])
 
 	def tick(self, delta_t):
 		for node in self.nodes:

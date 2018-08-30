@@ -2,10 +2,6 @@ package ch.ethz.systems.nqsim;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
@@ -16,26 +12,32 @@ public final class Agent {
     public int current_travel_time;
     public int time_to_pass_link;
 
-    private long id;
+    private String id;
     private Plan plan;
     private static long next_id = 0;
     private static int is_using_auto_id = -1;
 
-    private static long getAutoId() {
+    private static String getAutoId() {
         long id = next_id;
-        next_id += 1;
-        return id;
+        return String.valueOf(id);
     }
 
     @JsonCreator
     public Agent(
-        @JsonProperty("id") long id,
+        @JsonProperty("id") String id,
         @JsonProperty("plan") Plan plan,
         @JsonProperty("current_travel_time") int current_travel_time,
         @JsonProperty("time_to_pass_link") int time_to_pass_link
     ) {
-        if (id >= next_id) {
-            next_id = id + 1;
+        long numeric_id = 0;
+        try {
+            numeric_id = Long.parseLong(id);
+        }
+        catch (NumberFormatException e) {
+            //ignore
+        }
+        if (numeric_id >= next_id) {
+            next_id = numeric_id + 1;
         }
         this.id = id;
         this.plan = plan;
@@ -43,7 +45,7 @@ public final class Agent {
         this.time_to_pass_link = time_to_pass_link;
     }
 
-    public Agent(long id, Plan plan) {
+    public Agent(String id, Plan plan) {
         this(id, plan, 0, 0);
     }
 
@@ -85,7 +87,7 @@ public final class Agent {
         return this.plan.poll();
     }
 
-    public long getId() {
+    public String getId() {
         return this.id;
     }
     public Plan getPlan() {

@@ -1,5 +1,8 @@
 package ch.ethz.systems.nqsim;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Iterator;
 import java.util.Queue;
 
@@ -13,17 +16,29 @@ public final class Link {
     private int jam_travel_time;
     private Queue<Agent> q;
 
-    private static long instance_counter = 0;
-    private static int is_using_auto_id = -1;
+    private static long next_id = 0;
 
     private static String getAutoId() {
-        long id = instance_counter;
+        long id = next_id;
         return String.valueOf(id);
     }
 
-    private Link(String id, int length, int free_flow_velocity, int autoIdOption, Queue<Agent> queue) throws LinkException {
-        if (is_using_auto_id != autoIdOption && is_using_auto_id != -1) {
-            throw new LinkException("cannot mix auto ids and fixed ids for links in same sim");
+    @JsonCreator
+    public Link(
+            @JsonProperty("id") String id,
+            @JsonProperty("length") int length,
+            @JsonProperty("free_flow_velocity") int free_flow_velocity,
+            @JsonProperty("q") TransportQueue q
+    ) {
+        long numeric_id = 0;
+        try {
+            numeric_id = Long.parseLong(id);
+        }
+        catch (NumberFormatException e) {
+            //ignore
+        }
+        if (numeric_id >= next_id) {
+            next_id = numeric_id + 1;
         }
         if (length < 0) {
             throw new IllegalArgumentException("negative length");
@@ -36,7 +51,7 @@ public final class Link {
         this.id = id;
         this.length = length;
         this.free_flow_velocity = free_flow_velocity;
-        this.q = queue;
+        this.q = q;
         this.free_flow_capacity = this.length / Math.max(
                 Constants.JAM_AGENT_LENGTH,
                 Constants.FREE_FLOW_AGENT_LENGTH_PER_KPH * this.free_flow_velocity
@@ -44,16 +59,15 @@ public final class Link {
         this.jam_capacity = this.length / Constants.JAM_AGENT_LENGTH;
         this.free_flow_travel_time = this.length / this.free_flow_velocity;
         this.jam_travel_time = this.length / Constants.JAM_VELOCITY;
-        is_using_auto_id = autoIdOption;
-        instance_counter += 1;
+        next_id += 1;
     }
 
-    public Link(int length, int free_flow_velocity) throws LinkException {
-        this(getAutoId(), length, free_flow_velocity, 1, new TransportQueue());
+    public Link(int length, int free_flow_velocity) {
+        this(getAutoId(), length, free_flow_velocity, new TransportQueue());
     }
 
-    public Link(String id, int length, int free_flow_velocity) throws LinkException {
-        this(id, length, free_flow_velocity, 0, new TransportQueue());
+    public Link(String id, int length, int free_flow_velocity) {
+        this(id, length, free_flow_velocity, new TransportQueue());
     }
 
     @Override
@@ -125,5 +139,9 @@ public final class Link {
         for (Agent agent:this.q) {
             agent.tick(delta_t);
         }
+    }
+
+    public String getId() {
+        return this.id;
     }
 }

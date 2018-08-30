@@ -15,6 +15,7 @@ public final class MainTest {
 
             JSONTest test3 = new JSONTest();
             test3.testAgentSerialization();
+            test3.testLoadingFromJSON();
 
             ProtostuffTest test4 = new ProtostuffTest();
             test4.testAgentSerialization();
