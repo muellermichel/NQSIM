@@ -1,0 +1,32 @@
+Jackson JSON Serialization/Deserialization (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz)
+
+LinkedList<Byte> plans -------------------------------------
+runtime [s]: 15.076; ser+deser per second: 663305.9166887768
+ArrayDeque<Byte> plans -------------------------------------
+runtime [s]: 13.738; ser+deser per second: 727907.9924297569
+fastutil ByteArrayList plans -------------------------------
+runtime [s]: 12.486; ser+deser per second: 800897.0046452025
+
+Protostuff binary Serialization/Deserialization (1 core)
+fastutil ByteArrayList plans -------------------------------
+runtime [s]: 18.144; ser+deser per second: 551146.3844797178
+
+
+============================================================
+after some more optimizations
+
+Jackson JSON Serialization/Deserialization (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz)
+byte[] plans -----------------------------------------------
+jackson runtime [s]: 14.46; ser+deser per second: 691562.9322268326
+protostuff runtime [s]: 5.002; ser+deser per second: 1999200.3198720512
+binary runtime [s]: 0.849; ser+deser per second: 1.1778563015312131E7
+
+2nd run
+jackson runtime [s]: 14.305; ser+deser per second: 699056.2740300595
+protostuff runtime [s]: 4.86; ser+deser per second: 2057613.1687242796
+binary runtime [s]: 0.981; ser+deser per second: 1.019367991845056E7
+
+3rd run
+jackson runtime [s]: 14.973; ser+deser per second: 667868.8305616777
+protostuff runtime [s]: 5.115; ser+deser per second: 1955034.2130987293
+binary runtime [s]: 1.116; ser+deser per second: 8960573.476702508

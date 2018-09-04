@@ -14,7 +14,7 @@ public class JSONTest {
         ObjectWriter agentWriter = om.writerFor(Agent.class);
         ObjectReader agentReader = om.readerFor(Agent.class);
 
-        Plan plan = new Plan((byte) 0, (byte) 0);
+        Plan plan = new Plan(new byte[]{(byte) 0, (byte) 0});
         Agent agentBefore = new Agent(String.valueOf(0), plan, 1, 2);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         agentBefore.streamAsJson(baos, agentWriter);

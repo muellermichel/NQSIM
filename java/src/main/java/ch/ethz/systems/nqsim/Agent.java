@@ -13,6 +13,7 @@ public final class Agent {
     public int time_to_pass_link;
 
     private String id;
+    private long numeric_id = -1;
     private Plan plan;
     private static long next_id = 0;
     private static int is_using_auto_id = -1;
@@ -22,13 +23,7 @@ public final class Agent {
         return String.valueOf(id);
     }
 
-    @JsonCreator
-    public Agent(
-        @JsonProperty("id") String id,
-        @JsonProperty("plan") Plan plan,
-        @JsonProperty("current_travel_time") int current_travel_time,
-        @JsonProperty("time_to_pass_link") int time_to_pass_link
-    ) {
+    private static long getNumericId(String id) {
         long numeric_id = 0;
         try {
             numeric_id = Long.parseLong(id);
@@ -36,10 +31,24 @@ public final class Agent {
         catch (NumberFormatException e) {
             //ignore
         }
-        if (numeric_id >= next_id) {
-            next_id = numeric_id + 1;
+        return numeric_id;
+    }
+
+    @JsonCreator
+    public Agent(
+        @JsonProperty("id") String id,
+        @JsonProperty("plan") Plan plan,
+        @JsonProperty("current_travel_time") int current_travel_time,
+        @JsonProperty("time_to_pass_link") int time_to_pass_link
+    ) {
+        this(getNumericId(id), plan, current_travel_time, time_to_pass_link);
+    }
+
+    public Agent(long id, Plan plan, int current_travel_time, int time_to_pass_link) {
+        this.numeric_id = id;
+        if (this.numeric_id >= next_id) {
+            next_id = this.numeric_id + 1;
         }
-        this.id = id;
         this.plan = plan;
         this.current_travel_time = current_travel_time;
         this.time_to_pass_link = time_to_pass_link;
@@ -53,10 +62,6 @@ public final class Agent {
         this(getAutoId(), plan, 0, 0);
     }
 
-    public Agent() {
-        this(getAutoId(), new Plan(), 0, 0);
-    }
-
     public static Agent fromJson(byte[] jsonData, ObjectReader or) throws IOException {
         return or.readValue(jsonData);
     }
@@ -64,7 +69,7 @@ public final class Agent {
     @Override
     public String toString() {
         return "Agent{" +
-                "id=" + id +
+                "id=" + this.getId() +
                 ", current_travel_time=" + current_travel_time +
                 ", time_to_pass_link=" + time_to_pass_link +
                 ", plan=" + plan +
@@ -73,6 +78,23 @@ public final class Agent {
 
     public void streamAsJson(OutputStream os, ObjectWriter ow) throws IOException {
         ow.writeValue(os, this);
+    }
+
+    public void serializeToBytes(byte[] bytes, int offset) {
+        Helper.intToByteArray(this.current_travel_time, bytes, offset);
+        Helper.intToByteArray(this.time_to_pass_link, bytes, offset + 4);
+        this.plan.serializeToBytes(bytes, offset + 8);
+    }
+
+    public static Agent deserializeFromBytes(byte[] bytes, int offset) {
+        int current_travel_time = Helper.intFromByteArray(bytes, offset);
+        int time_to_pass_link = Helper.intFromByteArray(bytes, offset + 4);
+        Plan plan = Plan.deserializeFromBytes(bytes, offset + 8);
+        return new Agent(next_id, plan, current_travel_time, time_to_pass_link);
+    }
+
+    public int byteLength() {
+        return 8 + this.plan.byteLength();
     }
 
     public void tick(int delta_t) {
@@ -88,6 +110,9 @@ public final class Agent {
     }
 
     public String getId() {
+        if (this.id == null) {
+            this.id = String.valueOf(this.numeric_id);
+        }
         return this.id;
     }
     public Plan getPlan() {

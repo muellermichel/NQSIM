@@ -14,12 +14,16 @@ public final class Node {
 
     @JsonCreator
     public Node(@JsonProperty("incoming_links") List<Link> incoming_links) {
-        this.incoming_links = incoming_links;
+        this(incoming_links, new ArrayList<>());
     }
 
     public Node() {
-        this.incoming_links = new ArrayList<Link>();
-        this.outgoing_links = new ArrayList<Link>();
+        this(new ArrayList<>(), new ArrayList<>());
+    }
+
+    public Node(List<Link> incoming_links, List<Link> outgoing_links) {
+        this.incoming_links = incoming_links;
+        this.outgoing_links = outgoing_links;
     }
 
     public void addIncomingLink(Link link) {
@@ -44,6 +48,10 @@ public final class Node {
         if (agent.peekPlan() == link_index) {
             agent.pollPlan();
         }
+    }
+
+    public List<Link> getIncomingLinks() {
+        return this.incoming_links;
     }
 
     public Link getIncomingLink(byte link_index) throws NodeException {

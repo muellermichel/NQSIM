@@ -5,9 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 
 public final class World {
     private int t;
@@ -19,16 +17,30 @@ public final class World {
 
     @JsonCreator
     public World(
-            @JsonProperty("plan") List<Node> nodes,
+            @JsonProperty("nodes") List<Node> nodes,
             @JsonProperty("t") int t,
-            @JsonProperty("outgoing_link_ids_by_node_index") Map<Integer, String> outgoing_link_ids_by_node_index
+            @JsonProperty("outgoing_link_ids_by_node_index") Map<String, List<String>> outgoing_link_ids_by_node_index
     ) {
         this.nodes = nodes;
         this.t = t;
+
+        Map<String, Link> links_by_id = new HashMap<>();
+        for (Node n:this.nodes) {
+            for (Link l:n.getIncomingLinks()) {
+                links_by_id.put(l.getId(), l);
+            }
+        }
+        for (Map.Entry<String, List<String>> entry : outgoing_link_ids_by_node_index.entrySet()) {
+            int node_index = Integer.parseInt(entry.getKey());
+            List<String> link_ids = entry.getValue();
+            for (String link_id:link_ids) {
+                this.nodes.get(node_index).addOutgoingLink(links_by_id.get(link_id));
+            }
+        }
     }
 
     public World(List<Node> nodes) {
-        this(nodes, 0);
+        this(nodes, 0, new HashMap<>());
     }
 
     public List<Node> getNodes() {

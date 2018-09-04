@@ -1,0 +1,1 @@
+{"t": 19, "outgoing_link_ids_by_node_index": {"2": [], "1": ["2"], "0": ["1"]}, "nodes": [{"incoming_links": []}, {"incoming_links": [{"id": "1", "q": [], "free_flow_velocity": 10, "length": 100}]}, {"incoming_links": [{"id": "2", "q": [{"id": "unset", "current_travel_time": 9, "time_to_pass_link": 10.0, "plan": []}], "free_flow_velocity": 10, "length": 100}]}]}

@@ -22,7 +22,7 @@ public class ThreeNodesTest {
     }
 
     void testSingleAgent() throws NodeException, LinkException, AgentException {
-        Agent agent = new Agent(new Plan((byte) 0));
+        Agent agent = new Agent(new Plan(new byte[] {(byte) 0}));
         this.nodes.get(0).getOutgoingLink((byte)0).add(agent);
         World world = new World(this.nodes);
         for (int time = 0; time < 9; time++) {
