@@ -100,8 +100,9 @@ public final class Node {
             Agent current_agent = link.peek();
             while (current_agent != null && current_agent.current_travel_time >= current_agent.time_to_pass_link) {
                 byte next_link_idx = current_agent.peekPlan();
+                Link next_link = null;
                 if (next_link_idx != -1) {
-                    Link next_link = this.getOutgoingLink(next_link_idx);
+                    next_link = this.getOutgoingLink(next_link_idx);
                     if (!next_link.isAccepting()) {
                         break;
                     }
@@ -117,13 +118,15 @@ public final class Node {
                         ));
                     }
                 }
-                System.err.println(String.format(
-                    "node %d: agent %s is crossing over from link %d to %d",
-                    node_index,
-                    current_agent.getId(),
-                    link_idx,
-                    next_link_idx
-                ));
+//                System.err.println(String.format(
+//                    "node %d: agent %s has crossed over from link %d(%s) to %d(%s)",
+//                    node_index,
+//                    current_agent.getId(),
+//                    link_idx,
+//                    link.getId(),
+//                    next_link_idx,
+//                    ( next_link == null ) ? "none" : next_link.getId()
+//                ));
                 try {
                     link.removeFirstWaiting();
                 }

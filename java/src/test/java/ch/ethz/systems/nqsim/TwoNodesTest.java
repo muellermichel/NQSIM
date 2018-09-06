@@ -8,7 +8,7 @@ import java.util.List;
 
 //import static org.junit.jupiter.api.Assertions.*;
 
-class TwoNodesTest {
+public final class TwoNodesTest {
     private List<Node> nodes;
 
 //    @org.junit.jupiter.api.BeforeEach

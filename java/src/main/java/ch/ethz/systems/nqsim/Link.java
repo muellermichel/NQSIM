@@ -144,4 +144,28 @@ public final class Link {
     public String getId() {
         return this.id;
     }
+
+    public int getFreeFlowVelocity() {
+        return this.free_flow_velocity;
+    }
+
+    public int getLength() {
+        return this.length;
+    }
+
+    public int getJamCapacity() {
+        return this.jam_capacity;
+    }
+
+    public int getFreeFlowCapacity() {
+        return this.free_flow_capacity;
+    }
+
+    public int getJamTravelTime() {
+        return this.jam_travel_time;
+    }
+
+    public int getFreeFlowTravelTime() {
+        return this.free_flow_travel_time;
+    }
 }

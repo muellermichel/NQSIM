@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ThreeNodesTest {
+public final class ThreeNodesTest {
     private List<Node> nodes;
 
     void setUp() throws LinkException {

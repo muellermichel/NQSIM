@@ -59,7 +59,7 @@ class Node(object):
 					current_agent.plan.popleft()
 					next_link.add(current_agent)
 				logging.debug("agent %s has crossed over from link %s to %s" %(
-					current_agent,
+					current_agent.id,
 					link.id,
 					next_link_id
 				))

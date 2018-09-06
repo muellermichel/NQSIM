@@ -8,7 +8,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 
-public class JSONTest {
+public final class JSONTest {
     void testAgentSerialization() throws IOException {
         ObjectMapper om = new ObjectMapper();
         ObjectWriter agentWriter = om.writerFor(Agent.class);

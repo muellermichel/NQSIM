@@ -1,6 +1,7 @@
 __pycache__*
 *.png
 *.db
+*.json
 snapshot_*
 target
 .idea*

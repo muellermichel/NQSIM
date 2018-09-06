@@ -1,4 +1,8 @@
-import logging
+import logging, math, time
+from collections import deque
+from link import LinkException, Link
+from agent import Agent
+from node import Node
 
 class World(object):
 	def __init__(self, nodes, outgoing_link_ids_by_node_index={}):
@@ -28,18 +32,64 @@ class World(object):
 		return {c:[l.id for l in n.outgoing_links] for c,n in enumerate(self.nodes)}
 
 	def setup_outgoing_links(self, outgoing_link_ids_by_node_index):
-		links_by_id = {l.id:l for l in sum((n.incoming_links for n in self.nodes), [])}
-		for node_index, link_ids in outgoing_link_ids_by_node_index.items():
+		links_by_id = {}
+		logging.info("gathering links")
+		for idx, node in enumerate(self.nodes):
+			for link in node.incoming_links:
+				links_by_id[link.id] = link
+			if idx % (len(self.nodes) / 100) == 0:
+				logging.info("%3.2fpercent" %(idx / len(self.nodes)*100))
+		logging.info("setting up outgoing links")
+		items = outgoing_link_ids_by_node_index.items()
+		counter = 0
+		for node_index, link_ids in items:
 			for link_id in link_ids:
 				self.nodes[int(node_index)].add_outgoing_link(links_by_id[link_id])
+			if counter % max(math.floor(len(items) / 100), 1) == 0:
+				logging.info("%3.2fpercent" %(counter / len(items)*100))
+			counter += 1
+
+	def world_with_numerically_routed_agents(self):
+		outgoing_link_index_by_identifier = {}
+		for node in self.nodes:
+			for idx, link in enumerate(node.outgoing_links):
+				if outgoing_link_index_by_identifier.get(link.id):
+					raise LinkException("two links have same id: %s" %(link.id))
+				outgoing_link_index_by_identifier[link.id] = idx
+		converted_nodes = []
+		for node in self.nodes:
+			converted_links = []
+			for link in node.incoming_links:
+				converted_q = deque()
+				for agent in link.q:
+					converted_q.append(Agent(
+						plan=[outgoing_link_index_by_identifier[link_id] for link_id in agent.plan],
+						current_travel_time=agent.current_travel_time,
+						time_to_pass_link=agent.time_to_pass_link,
+						identifier=agent.id
+					))
+				converted_links.append(Link(
+					identifier=link.id,
+					length=link.length,
+					free_flow_velocity=link.free_flow_velocity,
+					queue=converted_q
+				))
+			converted_nodes.append(Node(
+				incoming_links=converted_links
+			))
+		converted_world = World(converted_nodes)
+		converted_world.setup_outgoing_links(self.outgoing_link_ids_by_node_index)
+		return converted_world
 
 	def tick(self, delta_t):
+		start_time = time.time()
 		for node in self.nodes:
 			node.tick(delta_t)
 		for node in self.nodes:
 			node.route()
 		self.t += delta_t
-		logging.info("time=%is" %(self.t))
+		elapsed_time = time.time() - start_time
+		logging.info("time=%is,real for %is:%is,s/r:%6.4f" %(self.t, delta_t, elapsed_time, delta_t/elapsed_time))
 
 	def print(self, nodes_per_row=5):
 		import sys, colors

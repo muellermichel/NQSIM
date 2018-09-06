@@ -48,6 +48,7 @@ public final class World {
     }
 
     public void tick(int delta_t) throws NodeException {
+        long start = System.currentTimeMillis();
         for (Node node:this.nodes) {
             node.tick(delta_t);
         }
@@ -66,5 +67,14 @@ public final class World {
                 ));
             }
         }
+        this.t += 1;
+        long time = System.currentTimeMillis() - start;
+        System.out.println(String.format(
+                "time=%ds,real for %ds:%6.4fs,s/r:%6.4f",
+                this.t,
+                delta_t,
+                time / (double)1000,
+                delta_t / (time / (double)1000)
+        ));
     }
 }

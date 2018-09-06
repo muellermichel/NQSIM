@@ -1,3 +1,4 @@
+import math
 import constants
 from collections import deque
 
@@ -44,13 +45,13 @@ class Link(object):
 		self.length = state["length"]
 		self.free_flow_velocity = state["free_flow_velocity"]
 		self.q = state["q"]
-		self.free_flow_capacity = self.length / (max(
+		self.free_flow_capacity = math.floor(self.length / (max(
 			constants.JAM_AGENT_LENGTH,
 			constants.FREE_FLOW_AGENT_LENGTH_PER_KPH*self.free_flow_velocity
-		))
-		self.jam_capacity = self.length / constants.JAM_AGENT_LENGTH
-		self.free_flow_travel_time = self.length / self.free_flow_velocity
-		self.jam_travel_time = self.length / constants.JAM_VELOCITY
+		)))
+		self.jam_capacity = math.floor(self.length / constants.JAM_AGENT_LENGTH)
+		self.free_flow_travel_time = math.floor(self.length / self.free_flow_velocity)
+		self.jam_travel_time = math.floor(self.length / constants.JAM_VELOCITY)
 
 	def __len__(self):
 		return len(self.q)
