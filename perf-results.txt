@@ -1,7 +1,116 @@
-Chinese City, 374x374
-=====================
+Chinese City, 187x187, 3M Agents
+================================
 
-Python, (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz) 
+Python 3.5.2, (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz) 
+
+INFO:root:time=1s,real for 1s:0s,s/r:4.4745
+INFO:root:time=2s,real for 1s:0s,s/r:4.6682
+INFO:root:time=3s,real for 1s:0s,s/r:4.7322
+INFO:root:time=4s,real for 1s:0s,s/r:4.6763
+INFO:root:time=5s,real for 1s:0s,s/r:4.6928
+INFO:root:time=6s,real for 1s:0s,s/r:4.5416
+INFO:root:time=7s,real for 1s:0s,s/r:4.6506
+INFO:root:time=8s,real for 1s:0s,s/r:4.7321
+INFO:root:time=9s,real for 1s:0s,s/r:4.7018
+INFO:root:time=10s,real for 1s:0s,s/r:4.7320
+INFO:root:time=11s,real for 1s:0s,s/r:4.6969
+INFO:root:time=12s,real for 1s:0s,s/r:4.7265
+INFO:root:time=13s,real for 1s:0s,s/r:4.7422
+INFO:root:time=14s,real for 1s:0s,s/r:4.4660
+INFO:root:time=15s,real for 1s:0s,s/r:4.7381
+INFO:root:time=16s,real for 1s:0s,s/r:4.7196
+INFO:root:time=17s,real for 1s:0s,s/r:4.7123
+INFO:root:time=18s,real for 1s:0s,s/r:4.7128
+INFO:root:time=19s,real for 1s:0s,s/r:4.6949
+INFO:root:time=20s,real for 1s:0s,s/r:4.6868
+INFO:root:time=21s,real for 1s:0s,s/r:4.7424
+INFO:root:time=22s,real for 1s:0s,s/r:4.7028
+INFO:root:time=23s,real for 1s:0s,s/r:4.7291
+INFO:root:time=24s,real for 1s:0s,s/r:4.7232
+INFO:root:time=25s,real for 1s:0s,s/r:4.6759
+INFO:root:time=26s,real for 1s:0s,s/r:4.6689
+INFO:root:time=27s,real for 1s:0s,s/r:4.7054
+INFO:root:time=28s,real for 1s:0s,s/r:4.7055
+INFO:root:time=29s,real for 1s:0s,s/r:4.7095
+INFO:root:time=30s,real for 1s:0s,s/r:4.6371
+INFO:root:time=31s,real for 1s:0s,s/r:4.5828
+INFO:root:time=32s,real for 1s:0s,s/r:4.0166
+INFO:root:time=33s,real for 1s:0s,s/r:4.5369
+INFO:root:time=34s,real for 1s:0s,s/r:4.6263
+INFO:root:time=35s,real for 1s:0s,s/r:4.6984
+INFO:root:time=36s,real for 1s:0s,s/r:4.3262
+INFO:root:time=37s,real for 1s:0s,s/r:4.5588
+INFO:root:time=38s,real for 1s:0s,s/r:4.6626
+INFO:root:time=39s,real for 1s:0s,s/r:3.9999
+INFO:root:time=40s,real for 1s:0s,s/r:4.0675
+INFO:root:time=41s,real for 1s:0s,s/r:4.4848
+INFO:root:time=42s,real for 1s:0s,s/r:3.9906
+INFO:root:time=43s,real for 1s:0s,s/r:3.9141
+INFO:root:time=44s,real for 1s:0s,s/r:4.6985
+INFO:root:time=45s,real for 1s:0s,s/r:3.6684
+INFO:root:time=46s,real for 1s:0s,s/r:3.9896
+INFO:root:time=47s,real for 1s:0s,s/r:4.4592
+INFO:root:time=48s,real for 1s:0s,s/r:4.0888
+INFO:root:time=49s,real for 1s:0s,s/r:4.6469
+INFO:root:time=50s,real for 1s:0s,s/r:4.6128
+
+Java 10.0.2, (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz)
+
+time=1s,real for 1s:0,0310s,s/r:32,2581
+time=2s,real for 1s:0,0150s,s/r:66,6667
+time=3s,real for 1s:0,0150s,s/r:66,6667
+time=4s,real for 1s:0,0150s,s/r:66,6667
+time=5s,real for 1s:0,0150s,s/r:66,6667
+time=6s,real for 1s:0,0140s,s/r:71,4286
+time=7s,real for 1s:0,0150s,s/r:66,6667
+time=8s,real for 1s:0,0150s,s/r:66,6667
+time=9s,real for 1s:0,0140s,s/r:71,4286
+time=10s,real for 1s:0,0140s,s/r:71,4286
+time=11s,real for 1s:0,0130s,s/r:76,9231
+time=12s,real for 1s:0,0130s,s/r:76,9231
+time=13s,real for 1s:0,0150s,s/r:66,6667
+time=14s,real for 1s:0,0130s,s/r:76,9231
+time=15s,real for 1s:0,0120s,s/r:83,3333
+time=16s,real for 1s:0,0170s,s/r:58,8235
+time=17s,real for 1s:0,0110s,s/r:90,9091
+time=18s,real for 1s:0,0120s,s/r:83,3333
+time=19s,real for 1s:0,0160s,s/r:62,5000
+time=20s,real for 1s:0,0110s,s/r:90,9091
+time=21s,real for 1s:0,0160s,s/r:62,5000
+time=22s,real for 1s:0,0130s,s/r:76,9231
+time=23s,real for 1s:0,0120s,s/r:83,3333
+time=24s,real for 1s:0,0120s,s/r:83,3333
+time=25s,real for 1s:0,0130s,s/r:76,9231
+time=26s,real for 1s:0,0120s,s/r:83,3333
+time=27s,real for 1s:0,0110s,s/r:90,9091
+time=28s,real for 1s:0,0120s,s/r:83,3333
+time=29s,real for 1s:0,0120s,s/r:83,3333
+time=30s,real for 1s:0,0110s,s/r:90,9091
+time=31s,real for 1s:0,0120s,s/r:83,3333
+time=32s,real for 1s:0,0130s,s/r:76,9231
+time=33s,real for 1s:0,0190s,s/r:52,6316
+time=34s,real for 1s:0,0150s,s/r:66,6667
+time=35s,real for 1s:0,0150s,s/r:66,6667
+time=36s,real for 1s:0,0600s,s/r:16,6667
+time=37s,real for 1s:0,0120s,s/r:83,3333
+time=38s,real for 1s:0,0170s,s/r:58,8235
+time=39s,real for 1s:0,0160s,s/r:62,5000
+time=40s,real for 1s:0,0150s,s/r:66,6667
+time=41s,real for 1s:0,0110s,s/r:90,9091
+time=42s,real for 1s:0,0120s,s/r:83,3333
+time=43s,real for 1s:0,0120s,s/r:83,3333
+time=44s,real for 1s:0,0180s,s/r:55,5556
+time=45s,real for 1s:0,0290s,s/r:34,4828
+time=46s,real for 1s:0,0310s,s/r:32,2581
+time=47s,real for 1s:0,0190s,s/r:52,6316
+time=48s,real for 1s:0,0170s,s/r:58,8235
+time=49s,real for 1s:0,0160s,s/r:62,5000
+time=50s,real for 1s:0,0110s,s/r:90,9091
+
+Chinese City, 374x374, 3M Agents
+================================
+
+Python 3.5.2, (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz) 
 
 INFO:root:time=1s,real for 1s:0s,s/r:1.5089
 INFO:root:time=2s,real for 1s:0s,s/r:1.5637
@@ -54,7 +163,8 @@ INFO:root:time=48s,real for 1s:0s,s/r:1.5213
 INFO:root:time=49s,real for 1s:0s,s/r:1.5383
 INFO:root:time=50s,real for 1s:0s,s/r:1.5604
 
-Java, (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz) 
+Java 10.0.2, (1 core, Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz)
+
 time=1s,real for 1s:0,0620s,s/r:16,1290
 time=2s,real for 1s:0,0500s,s/r:20,0000
 time=3s,real for 1s:0,0500s,s/r:20,0000
