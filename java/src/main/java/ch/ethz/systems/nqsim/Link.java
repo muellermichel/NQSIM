@@ -14,6 +14,7 @@ public final class Link {
     private int jam_capacity;
     private int free_flow_travel_time;
     private int jam_travel_time;
+    private int assigned_rank;
     private Queue<Agent> q;
 
     private static long next_id = 0;
@@ -59,6 +60,7 @@ public final class Link {
         this.jam_capacity = this.length / Constants.JAM_AGENT_LENGTH;
         this.free_flow_travel_time = this.length / this.free_flow_velocity;
         this.jam_travel_time = this.length / Constants.JAM_VELOCITY;
+        this.assigned_rank = 0;
         next_id += 1;
     }
 
@@ -167,5 +169,13 @@ public final class Link {
 
     public int getFreeFlowTravelTime() {
         return this.free_flow_travel_time;
+    }
+
+    public void setAssignedRank(int rank) {
+        this.assigned_rank = rank;
+    }
+
+    public int getAssignedRank() {
+        return this.assigned_rank;
     }
 }

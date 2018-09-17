@@ -61,7 +61,7 @@ class ChineseCapital(object):
 			logging.info("%3.2fpercent" %(row_index / edge_length*100))
 
 		logging.info("setting up randomness")
-		self.random = ReducedRandom(edge_length*edge_length*2)
+		self.random = ReducedRandom(20000000)
 		self.node_board = node_board
 		self.link_board_horicontal = link_board_horicontal
 		self.backlink_board_horicontal = backlink_board_horicontal
@@ -116,8 +116,11 @@ class ChineseCapital(object):
 				logging.info("%3.2fpercent" %(idx / len(self.node_board)*100))
 		logging.info("making agent plans")
 		total_num_link_exceptions = 0
+		num_added = 0
 		for num in range(num_agents):
 			num_link_exceptions = 0
+			start_row_id = -1
+			start_col_id = -1
 			while True:
 				start_row_id = int(self.edge_length * self.random.random())
 				start_col_id = int(self.edge_length * self.random.random())
@@ -129,6 +132,8 @@ class ChineseCapital(object):
 				first_link = links_by_id[plan.popleft()]
 				try:
 					first_link.add(Agent(plan, identifier=num))
+					num_added += 1
+					break
 				except LinkException:
 					num_link_exceptions += 1
 					total_num_link_exceptions += 1
@@ -136,9 +141,12 @@ class ChineseCapital(object):
 						raise ChineseCapitalException(
 							"reduce agents or increase capacity - for agent %i at least 10 attempts to find a free link failed" %(num)
 						)
-				break
 			if num % max(math.floor(num_agents / 100), 1) == 0:
-				logging.info("%3.2fpercent" %(num / num_agents*100))
+				logging.info("agent %i, %i added, %3.2fpercent" %(
+					num,
+					num_added,
+					num / num_agents*100
+				))
 		logging.info("agent plans done; number of link exceptions that lead to rerolls: %i" %(total_num_link_exceptions))
 
 

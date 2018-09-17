@@ -2,7 +2,9 @@ __pycache__*
 *.png
 *.db
 *.json
+*.class
 snapshot_*
 target
 .idea*
 java.iml
+sync_with_fdr.sh

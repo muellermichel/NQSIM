@@ -3,15 +3,60 @@ package ch.ethz.systems.nqsim;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectReader;
+import mpi.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class World {
     private int t;
     private List<Node> nodes;
+    public Communicator communicator;
 
-    public static World fromJson(byte[] jsonData, ObjectReader or) throws IOException {
+    public static void compareAllLinks(World world, World reference_world, LinkComparator operator) {
+        ListIterator<Node> node_iterator = world.getNodes().listIterator();
+        while (node_iterator.hasNext()) {
+            int node_idx = node_iterator.nextIndex();
+            Node node = node_iterator.next();
+            ListIterator<Link> link_iterator = node.getIncomingLinks().listIterator();
+            while (link_iterator.hasNext()) {
+                int link_idx = link_iterator.nextIndex();
+                Link link = link_iterator.next();
+                Link reference_link = reference_world.getNodes()
+                        .get(node_idx)
+                        .getIncomingLinks()
+                        .get(link_idx);
+                operator.voidOp(link, reference_link, node_idx, link_idx);
+            }
+        }
+    }
+
+    public static long sumOverAllLinks(World world, LinkToIntOperator operator) {
+        long sum = 0;
+        for (Node node : world.getNodes()) {
+            for (Link link : node.getIncomingLinks()) {
+                sum += operator.intOp(link);
+            }
+        }
+        return sum;
+    }
+
+    public static long sumOverAllNodes(World world, NodeToLongOperator operator) {
+        long sum = 0;
+        for (Node node : world.getNodes()) {
+            sum += operator.longOp(node);
+        }
+        return sum;
+    }
+
+    public static void applyToAllNodes(World world, NodeOperator operator) {
+        for (Node node : world.getNodes()) {
+            operator.voidOp(node);
+        }
+    }
+
+        public static World fromJson(byte[] jsonData, ObjectReader or) throws IOException {
         return or.readValue(jsonData);
     }
 
@@ -47,7 +92,58 @@ public final class World {
         return this.nodes;
     }
 
+    public void addRandomAgents(int numOfAgents) throws NodeException, LinkException {
+        int my_rank = MPI.COMM_WORLD.Rank();
+        Map<String,Node> next_node_by_link_id = new HashMap<>();
+        World.applyToAllNodes(this, node -> {
+            for (Link link:node.getIncomingLinks()) {
+                next_node_by_link_id.put(link.getId(), node);
+            }
+        });
+        Map<Node,Integer> num_outgoing_links_by_node = new HashMap<>();
+        World.applyToAllNodes(this, node -> {
+            num_outgoing_links_by_node.put(node, node.getOutgoingLinks().size());
+        });
+        Random randomGenerator = new Random(1);
+        for (int idx = 0; idx < numOfAgents; idx++) {
+            int plan_length = randomGenerator.nextInt(40) + 20;
+            int start_node_idx = randomGenerator.nextInt(this.nodes.size());
+            Node current_node = this.nodes.get(start_node_idx);
+            Link start_link = null;
+            byte[] plan_bytes = new byte[plan_length - 1];
+            for (int leg_idx = 0; leg_idx < plan_length; leg_idx++) {
+                byte next_link_idx = (byte) randomGenerator.nextInt(num_outgoing_links_by_node.get(current_node));
+                Link link = current_node.getOutgoingLink(next_link_idx);
+                if (start_link == null && start_link.getAssignedRank() == my_rank ) {
+                    start_link = link;
+                }
+                else if (start_link == null) {
+                    start_link = link;
+                    plan_bytes[leg_idx - 1] = next_link_idx;
+                }
+                else {
+                    plan_bytes[leg_idx - 1] = next_link_idx;
+                }
+                current_node = next_node_by_link_id.get(link.getId());
+            }
+            Agent agent = new Agent(new Plan(plan_bytes));
+            if (start_link.getAssignedRank() == my_rank) {
+                start_link.add(agent);
+            }
+            else {
+                this.communicator.prepareAgentForTransmission(
+                    agent,
+                    start_link.getAssignedRank(),
+                    start_node_idx
+                );
+            }
+        }
+    }
+
     public void tick(int delta_t) throws NodeException {
+        if (this.communicator == null) {
+            this.communicator = new Communicator();
+        }
         long start = System.currentTimeMillis();
         for (Node node:this.nodes) {
             node.tick(delta_t);
@@ -57,7 +153,7 @@ public final class World {
             int idx = node_iterator.nextIndex();
             Node node = node_iterator.next();
             try {
-                node.route(idx);
+                node.route(idx, this.communicator);
             }
             catch (NodeException e) {
                 throw new NodeException(String.format(
@@ -66,6 +162,17 @@ public final class World {
                     e.getMessage()
                 ));
             }
+        }
+        try {
+            this.communicator.communicateAll(this);
+        }
+        catch (InterruptedException | ExceedingBufferException | CommunicatorException e) {
+            System.out.println(String.format(
+                    "caught %s:%s",
+                    e.getClass(),
+                    e.getMessage()
+            ));
+            e.printStackTrace();
         }
         this.t += 1;
         long time = System.currentTimeMillis() - start;
