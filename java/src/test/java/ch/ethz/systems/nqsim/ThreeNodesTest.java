@@ -2,13 +2,12 @@ package ch.ethz.systems.nqsim;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 public final class ThreeNodesTest {
     private List<Node> nodes;
 
-    void setUp() throws LinkException {
+    void setUp() {
         Link link1 = new Link(100, 10);
         Link link2 = new Link(100, 10);
         Node node1 = new Node();
@@ -21,7 +20,7 @@ public final class ThreeNodesTest {
         this.nodes = new ArrayList<>(Arrays.asList(node1, node2, node3));
     }
 
-    void testSingleAgent() throws NodeException, LinkException, AgentException {
+    void testSingleAgent() throws NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
         Agent agent = new Agent(new Plan(new byte[] {(byte) 0}));
         this.nodes.get(0).getOutgoingLink((byte)0).add(agent);
         World world = new World(this.nodes);

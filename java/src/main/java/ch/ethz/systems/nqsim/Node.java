@@ -108,16 +108,26 @@ public final class Node {
             return -1;
         }
         Link next_link = this.getOutgoingLink(next_link_idx);
-        if (!next_link.isAccepting()) {
-            return -2;
+        try {
+            if (!next_link.isAccepting()) {
+                return -2;
+            }
+        } catch (LinkException e) {
+            throw new NodeException(String.format(
+                    "link %d: %s",
+                    next_link_idx,
+                    e.getMessage()
+            ));
         }
-        int my_rank = communicator.getMyRank();
-        if (next_link.getAssignedRank() != my_rank) {
-            communicator.prepareAgentForTransmission(
-                agent,
-                next_link.getAssignedRank(),
-                communicator.getGlobalNodeIdxFromLocalIdx(node_index, my_rank)
-            );
+        if (communicator != null) {
+            int my_rank = communicator.getMyRank();
+            if (next_link.getAssignedRank() != my_rank) {
+                communicator.prepareAgentForTransmission(
+                        agent,
+                        next_link.getAssignedRank(),
+                        communicator.getGlobalNodeIdxFromLocalIdx(node_index, my_rank)
+                );
+            }
         }
         agent.pollPlan();
         try {
@@ -173,6 +183,18 @@ public final class Node {
                         e.getMessage()
                 ));
             }
+        }
+    }
+
+    public void computeCapacities() {
+        for (Link link : this.incoming_links) {
+            link.computeCapacity();
+        }
+    }
+
+    public void finalizeTimestep() {
+        for (Link link : this.incoming_links) {
+            link.finalizeTimestep();
         }
     }
 

@@ -15,6 +15,7 @@ public final class Link {
     private int free_flow_travel_time;
     private int jam_travel_time;
     private int assigned_rank;
+    private int current_capacity;
     private Queue<Agent> q;
 
     private static long next_id = 0;
@@ -61,6 +62,7 @@ public final class Link {
         this.free_flow_travel_time = this.length / this.free_flow_velocity;
         this.jam_travel_time = this.length / Constants.JAM_VELOCITY;
         this.assigned_rank = 0;
+        this.current_capacity = -1;
         next_id += 1;
     }
 
@@ -82,11 +84,27 @@ public final class Link {
             '}';
     }
 
-    public boolean isAccepting() {
-        if (this.q.size() < this.jam_capacity) {
-            return true;
+    public boolean isAccepting() throws LinkException {
+        return this.availableCapacity() > 0;
+    }
+
+    public int availableCapacity() throws LinkException {
+        if (this.current_capacity == -1) {
+            throw new LinkException("capacity not yet computed for " + this.getId());
         }
-        return false;
+        return this.current_capacity;
+    }
+
+    public void computeCapacity() {
+        this.current_capacity = this.jam_capacity - this.q.size();
+    }
+
+    public void setCommunicatedCapacity(int capacity) {
+        this.current_capacity = capacity;
+    }
+
+    public void finalizeTimestep() {
+        this.current_capacity = -1;
     }
 
     //very inefficient! don't use this outside of testing code!

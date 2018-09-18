@@ -7,8 +7,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import mpi.*;
+import java.util.ListIterator;
 
 public final class ChineseCity {
     public static void checkAgainstReference(World world, String filename) throws IOException {
@@ -59,10 +58,11 @@ public final class ChineseCity {
         });
     }
 
-    public static void main(String[] args) throws IOException, NodeException, LinkException, ChineseCityException, CommunicatorException {
-        MPI.Init(args);
-        int my_rank = MPI.COMM_WORLD.Rank();
-        int num_ranks = MPI.COMM_WORLD.Size();
+    public static void main(String[] args) throws IOException, NodeException, LinkException, ChineseCityException, CommunicatorException, ExceedingBufferException, InterruptedException {
+        Communicator communicator = new Communicator(args);
+
+        int my_rank = communicator.getMyRank();
+        int num_ranks = communicator.getNumberOfRanks();
         int num_rank_rows = (int)Math.sqrt(num_ranks);
         int num_rank_cols = num_ranks / num_rank_rows;
         if (num_rank_rows * num_rank_cols != num_ranks) {
@@ -70,7 +70,7 @@ public final class ChineseCity {
         }
         System.out.println(String.format(
             "%s: Initializing rank %d of %d; world to be divided into %dx%d worlds",
-            MPI.Get_processor_name(),
+            communicator.getProcessorName(),
             my_rank,
             num_ranks,
             num_rank_rows,
@@ -85,7 +85,6 @@ public final class ChineseCity {
         File file = new File("chinese_capital_187x187.json");
         InputStream is = new FileInputStream(file);
         World complete_world = World.fromJson(IOUtils.toByteArray(is), worldReader);
-        Communicator communicator = new Communicator();
         complete_world.communicator = communicator;
         int num_total_nodes = complete_world.getNodes().size();
         int edge_length = (int)Math.sqrt(num_total_nodes);
@@ -115,6 +114,11 @@ public final class ChineseCity {
                             local_node_idx,
                             assigned_rank
                         );
+                        ListIterator<Link> it = curr_node.getOutgoingLinks().listIterator();
+                        while (it.hasNext()) {
+                            int idx = it.nextIndex();
+                            communicator.addLink(curr_node, it.next(), global_node_index, idx);
+                        }
                         local_node_idx += 1;
                     }
                 }
@@ -132,13 +136,13 @@ public final class ChineseCity {
             complete_world.addRandomAgents(3000000);
         }
 
-//        for (int time=0; time < 600; time += 1) {
-//            world.tick(1);
-//        }
-//        System.out.println(String.format("world finished with %d agents, %d routed",
-//                World.sumOverAllLinks(world, Link::queueLength),
-//                World.sumOverAllNodes(world, Node::getRouted)
-//        ));
-//        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
+        for (int time=0; time < 600; time += 1) {
+            world.tick(1);
+        }
+        System.out.println(String.format("world finished with %d agents, %d routed",
+                World.sumOverAllLinks(world, Link::queueLength),
+                World.sumOverAllNodes(world, Node::getRouted)
+        ));
+        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
     }
 }

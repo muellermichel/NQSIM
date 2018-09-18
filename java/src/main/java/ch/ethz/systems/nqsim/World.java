@@ -7,7 +7,6 @@ import mpi.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class World {
     private int t;
@@ -93,7 +92,7 @@ public final class World {
     }
 
     public void addRandomAgents(int numOfAgents) throws NodeException, LinkException {
-        int my_rank = MPI.COMM_WORLD.Rank();
+        int my_rank = this.communicator.getMyRank();
         Map<String,Node> next_node_by_link_id = new HashMap<>();
         World.applyToAllNodes(this, node -> {
             for (Link link:node.getIncomingLinks()) {
@@ -114,15 +113,18 @@ public final class World {
             for (int leg_idx = 0; leg_idx < plan_length; leg_idx++) {
                 byte next_link_idx = (byte) randomGenerator.nextInt(num_outgoing_links_by_node.get(current_node));
                 Link link = current_node.getOutgoingLink(next_link_idx);
-                if (start_link == null && start_link.getAssignedRank() == my_rank ) {
+                if (start_link == null && link.getAssignedRank() == my_rank ) {
                     start_link = link;
                 }
                 else if (start_link == null) {
                     start_link = link;
+
+                }
+                if (leg_idx > 0 && start_link.getAssignedRank() == my_rank) {
                     plan_bytes[leg_idx - 1] = next_link_idx;
                 }
-                else {
-                    plan_bytes[leg_idx - 1] = next_link_idx;
+                else if (start_link.getAssignedRank() != my_rank) {
+                    plan_bytes[leg_idx] = next_link_idx;
                 }
                 current_node = next_node_by_link_id.get(link.getId());
             }
@@ -140,13 +142,14 @@ public final class World {
         }
     }
 
-    public void tick(int delta_t) throws NodeException {
-        if (this.communicator == null) {
-            this.communicator = new Communicator();
-        }
+    public void tick(int delta_t) throws NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
         long start = System.currentTimeMillis();
         for (Node node:this.nodes) {
             node.tick(delta_t);
+            node.computeCapacities();
+        }
+        if (this.communicator != null) {
+            this.communicator.communicateCapacities(this);
         }
         ListIterator<Node> node_iterator = this.nodes.listIterator();
         while (node_iterator.hasNext()) {
@@ -163,16 +166,11 @@ public final class World {
                 ));
             }
         }
-        try {
-            this.communicator.communicateAll(this);
+        if (this.communicator != null) {
+            this.communicator.communicateAgents(this);
         }
-        catch (InterruptedException | ExceedingBufferException | CommunicatorException e) {
-            System.out.println(String.format(
-                    "caught %s:%s",
-                    e.getClass(),
-                    e.getMessage()
-            ));
-            e.printStackTrace();
+        for (Node node:this.nodes) {
+            node.finalizeTimestep();
         }
         this.t += 1;
         long time = System.currentTimeMillis() - start;

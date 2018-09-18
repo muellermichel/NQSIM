@@ -22,7 +22,7 @@ public final class TwoNodesTest {
     }
 
 //    @Test
-    void testSingleAgent() throws NodeException, AgentException {
+    void testSingleAgent() throws NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
         Agent agent = new Agent(new Plan(new byte[0]));
         this.nodes.get(1).addAgent(agent, (byte) 0);
         World world = new World(this.nodes);
@@ -37,7 +37,7 @@ public final class TwoNodesTest {
         assert this.nodes.get(0).outgoingQueueLength((byte) 0) == 0;
     }
 
-    void testFullCapacity() throws NodeException, LinkException, AgentException {
+    void testFullCapacity() throws NodeException, LinkException {
         for (int time = 0; time < 10; time++) {
             this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
         }
@@ -54,6 +54,8 @@ public final class TwoNodesTest {
         for (int time = 0; time < 9; time++) {
             this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
         }
+        this.nodes.get(0).computeCapacities();
+        this.nodes.get(1).computeCapacities();
         assert !this.nodes.get(0).getOutgoingLink((byte)0).isAccepting();
     }
 }
