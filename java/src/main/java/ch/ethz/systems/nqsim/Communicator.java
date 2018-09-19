@@ -28,6 +28,15 @@ public final class Communicator {
         this.receive_buffer = new byte[buffer_size];
     }
 
+    public void shutDown() {
+        try {
+            MPI.Finalize();
+        }
+        catch (NoClassDefFoundError e) {
+            //ignore
+        }
+    }
+
     public void prepareAgentForTransmission(Agent agent, int rank, int global_node_idx) {
         Map<Integer, List<Agent>> agents_by_node_idx = this.sending_agents_by_node_idx_by_rank
             .computeIfAbsent(rank, k -> new HashMap<>());
@@ -37,12 +46,20 @@ public final class Communicator {
     }
 
     public void addLink(Node sourceNode, Link link, int sourceNodeIdx, int outgoingLinkIdx) {
-        if (sourceNode.getAssignedRank() == link.getAssignedRank()) {
+        if (link.getAssignedRank() == this.getMyRank()) {
             return;
         }
         List<CapacityMessageIngredients> capacity_message_factories = this.capacity_message_ingredients_by_rank
             .computeIfAbsent(sourceNode.getAssignedRank(), k -> new LinkedList<>());
         capacity_message_factories.add(new CapacityMessageIngredients(sourceNode, link, sourceNodeIdx, outgoingLinkIdx));
+        System.out.println(String.format(
+            "rank %d: added link %s to capacity messages from source node %d; node rank %d, link rank %d",
+            this.getMyRank(),
+            link.getId(),
+            sourceNodeIdx,
+            sourceNode.getAssignedRank(),
+            link.getAssignedRank()
+        ));
     }
 
     public Request sendAgentsNB(int rank) throws ExceedingBufferException {
@@ -161,6 +178,11 @@ public final class Communicator {
                         routing_status
                     ));
                 }
+                System.out.println(String.format(
+                    "transferred agent from rank %d to %d",
+                    rank,
+                    MPI.COMM_WORLD.Rank()
+                ));
             }
         }
     }
@@ -181,9 +203,7 @@ public final class Communicator {
             }
             this.updateWorldFromRank(rank, world_to_update);
         }
-        for (Request request:send_requests) {
-            request.wait();
-        }
+        this.waitAll(send_requests);
     }
 
     public void communicateCapacities(World world_to_update) throws NodeException, LinkException, InterruptedException, ExceedingBufferException {
@@ -202,9 +222,7 @@ public final class Communicator {
             }
             this.updateLinkCapacitiesFromRank(rank, world_to_update);
         }
-        for (Request request:send_requests) {
-            request.wait();
-        }
+        this.waitAll(send_requests);
     }
 
     public void setPairOfLocalAndGlobalNodeIndices(int global_idx, int local_idx, int local_rank) throws CommunicatorException {
@@ -224,6 +242,18 @@ public final class Communicator {
 
     public int getGlobalNodeIdxFromLocalIdx(int local_idx, int local_rank) {
         return this.global_node_idx_by_local_idx_and_rank.get(Arrays.asList(local_idx, local_rank));
+    }
+
+    public void waitAll(List<Request> requests) throws InterruptedException {
+        //note that we get exceptions when using FastMPJ's built-in wait function; incompatibility with current Java?
+        Request[] request_array = requests.toArray(new Request[requests.size()]);
+        while(true) {
+            Status[] status_array = Request.Testall(request_array);
+            if (status_array != null) {
+                break;
+            }
+            Thread.sleep(5);
+        }
     }
 
     public int getMyRank() {

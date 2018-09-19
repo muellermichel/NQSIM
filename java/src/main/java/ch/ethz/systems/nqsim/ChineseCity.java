@@ -58,7 +58,7 @@ public final class ChineseCity {
         });
     }
 
-    public static void main(String[] args) throws IOException, NodeException, LinkException, ChineseCityException, CommunicatorException, ExceedingBufferException, InterruptedException {
+    public static void run(String[] args, String input_file_path, int num_agents) throws WorldException, IOException, NodeException, LinkException, ChineseCityException, CommunicatorException, ExceedingBufferException, InterruptedException {
         Communicator communicator = new Communicator(args);
 
         int my_rank = communicator.getMyRank();
@@ -82,7 +82,7 @@ public final class ChineseCity {
 
         World world = null;
         System.out.println(my_rank + ": loading network");
-        File file = new File("chinese_capital_187x187.json");
+        File file = new File(input_file_path);
         InputStream is = new FileInputStream(file);
         World complete_world = World.fromJson(IOUtils.toByteArray(is), worldReader);
         complete_world.communicator = communicator;
@@ -114,11 +114,6 @@ public final class ChineseCity {
                             local_node_idx,
                             assigned_rank
                         );
-                        ListIterator<Link> it = curr_node.getOutgoingLinks().listIterator();
-                        while (it.hasNext()) {
-                            int idx = it.nextIndex();
-                            communicator.addLink(curr_node, it.next(), global_node_index, idx);
-                        }
                         local_node_idx += 1;
                     }
                 }
@@ -131,11 +126,29 @@ public final class ChineseCity {
         if (world == null) {
             throw new ChineseCityException(my_rank + ": no local world initialized");
         }
+        ListIterator<Node> node_iterator = world.getNodes().listIterator();
+        while(node_iterator.hasNext()) {
+            int local_node_index = node_iterator.nextIndex();
+            Node node = node_iterator.next();
+            ListIterator<Link> link_iterator = node.getOutgoingLinks().listIterator();
+            while (link_iterator.hasNext()) {
+                int idx = link_iterator.nextIndex();
+                communicator.addLink(
+                    node,
+                    link_iterator.next(),
+                    world.communicator.getGlobalNodeIdxFromLocalIdx(local_node_index, communicator.getMyRank()),
+                    idx
+                );
+            }
+        }
         if (my_rank == 0) {
             System.out.println("adding agents on rank 0");
-            complete_world.addRandomAgents(3000000);
+            complete_world.addRandomAgents(num_agents);
         }
-
+        for (Node node : complete_world.getNodes()) {
+            node.computeCapacities();
+        }
+        world.communicator.communicateAgents(world);
         for (int time=0; time < 600; time += 1) {
             world.tick(1);
         }
@@ -143,6 +156,27 @@ public final class ChineseCity {
                 World.sumOverAllLinks(world, Link::queueLength),
                 World.sumOverAllNodes(world, Node::getRouted)
         ));
-        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
+        node_iterator = complete_world.getNodes().listIterator();
+        while (node_iterator.hasNext()) {
+            int node_idx = node_iterator.nextIndex();
+            Node node = node_iterator.next();
+            ListIterator<Link> link_iterator = node.getIncomingLinks().listIterator();
+            while (link_iterator.hasNext()) {
+                int link_idx = link_iterator.nextIndex();
+                Link link = link_iterator.next();
+                if (link.queueLength() > 0) {
+                    System.out.println(String.format(
+                            "rank %d, node %d, link %d: %d agents",
+                            communicator.getMyRank(),
+                            node_idx,
+                            link_idx,
+                            link.queueLength()
+                    ));
+                }
+            }
+        }
+//        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
+
+        communicator.shutDown();
     }
 }

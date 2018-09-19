@@ -154,14 +154,14 @@ public final class Node {
                     if (next_link_idx == -2) {
                         break;
                     }
-                    //                System.err.println(String.format(
-                    //                    "node %d: agent %s has crossed over from link %d(%s) to %d",
-                    //                    node_index,
-                    //                    current_agent.getId(),
-                    //                    link_idx,
-                    //                    link.getId(),
-                    //                    next_link_idx
-                    //                ));
+                    System.err.println(String.format(
+                        "node %d: agent %s has crossed over from link %d(%s) to %d",
+                        node_index,
+                        current_agent.getId(),
+                        link_idx,
+                        link.getId(),
+                        next_link_idx
+                    ));
                     try {
                         link.removeFirstWaiting();
                     }

@@ -25,7 +25,7 @@ public final class JSONTest {
         assert agentAfter.getPlan().size() == 1;
     }
 
-    void testLoadingFromJSON() throws IOException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    void testLoadingFromJSON() throws IOException, NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException {
         ObjectMapper om = new ObjectMapper();
         ObjectReader worldReader = om.readerFor(World.class);
 

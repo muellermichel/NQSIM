@@ -20,7 +20,7 @@ public final class ThreeNodesTest {
         this.nodes = new ArrayList<>(Arrays.asList(node1, node2, node3));
     }
 
-    void testSingleAgent() throws NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    void testSingleAgent() throws WorldException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
         Agent agent = new Agent(new Plan(new byte[] {(byte) 0}));
         this.nodes.get(0).getOutgoingLink((byte)0).add(agent);
         World world = new World(this.nodes);

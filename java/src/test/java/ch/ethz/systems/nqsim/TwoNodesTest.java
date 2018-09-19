@@ -22,7 +22,7 @@ public final class TwoNodesTest {
     }
 
 //    @Test
-    void testSingleAgent() throws NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    void testSingleAgent() throws NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException {
         Agent agent = new Agent(new Plan(new byte[0]));
         this.nodes.get(1).addAgent(agent, (byte) 0);
         World world = new World(this.nodes);

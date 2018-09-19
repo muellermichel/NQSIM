@@ -109,7 +109,7 @@ public final class World {
             int start_node_idx = randomGenerator.nextInt(this.nodes.size());
             Node current_node = this.nodes.get(start_node_idx);
             Link start_link = null;
-            byte[] plan_bytes = new byte[plan_length - 1];
+            byte[] plan_bytes = null;
             for (int leg_idx = 0; leg_idx < plan_length; leg_idx++) {
                 byte next_link_idx = (byte) randomGenerator.nextInt(num_outgoing_links_by_node.get(current_node));
                 Link link = current_node.getOutgoingLink(next_link_idx);
@@ -121,9 +121,15 @@ public final class World {
 
                 }
                 if (leg_idx > 0 && start_link.getAssignedRank() == my_rank) {
+                    if (plan_bytes == null) {
+                        plan_bytes = new byte[plan_length - 1];
+                    }
                     plan_bytes[leg_idx - 1] = next_link_idx;
                 }
                 else if (start_link.getAssignedRank() != my_rank) {
+                    if (plan_bytes == null) {
+                        plan_bytes = new byte[plan_length];
+                    }
                     plan_bytes[leg_idx] = next_link_idx;
                 }
                 current_node = next_node_by_link_id.get(link.getId());
@@ -142,38 +148,48 @@ public final class World {
         }
     }
 
-    public void tick(int delta_t) throws NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
-        long start = System.currentTimeMillis();
-        for (Node node:this.nodes) {
-            node.tick(delta_t);
-            node.computeCapacities();
-        }
-        if (this.communicator != null) {
-            this.communicator.communicateCapacities(this);
-        }
-        ListIterator<Node> node_iterator = this.nodes.listIterator();
-        while (node_iterator.hasNext()) {
-            int idx = node_iterator.nextIndex();
-            Node node = node_iterator.next();
-            try {
-                node.route(idx, this.communicator);
+    public void tick(int delta_t) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException {
+        long time = 0;
+        try {
+            long start = System.currentTimeMillis();
+            for (Node node : this.nodes) {
+                node.tick(delta_t);
+                node.computeCapacities();
             }
-            catch (NodeException e) {
-                throw new NodeException(String.format(
-                    "node %d: %s",
-                    idx,
-                    e.getMessage()
-                ));
+            if (this.communicator != null) {
+                this.communicator.communicateCapacities(this);
             }
+            ListIterator<Node> node_iterator = this.nodes.listIterator();
+            while (node_iterator.hasNext()) {
+                int idx = node_iterator.nextIndex();
+                Node node = node_iterator.next();
+                try {
+                    node.route(idx, this.communicator);
+                } catch (NodeException e) {
+                    throw new WorldException(String.format(
+                            "node %d: %s",
+                            idx,
+                            e.getMessage()
+                    ));
+                }
+            }
+            if (this.communicator != null) {
+                this.communicator.communicateAgents(this);
+            }
+            for (Node node : this.nodes) {
+                node.finalizeTimestep();
+            }
+            this.t += 1;
+            time = System.currentTimeMillis() - start;
         }
-        if (this.communicator != null) {
-            this.communicator.communicateAgents(this);
+        catch (NodeException | LinkException e) {
+            e.printStackTrace();
+            throw new WorldException(String.format(
+                "rank %d: %s",
+                (this.communicator != null) ? this.communicator.getMyRank() : -1,
+                e.getMessage()
+            ));
         }
-        for (Node node:this.nodes) {
-            node.finalizeTimestep();
-        }
-        this.t += 1;
-        long time = System.currentTimeMillis() - start;
         System.out.println(String.format(
                 "time=%ds,real for %ds:%6.4fs,s/r:%6.4f",
                 this.t,
