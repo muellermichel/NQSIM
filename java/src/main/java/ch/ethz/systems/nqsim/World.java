@@ -149,7 +149,7 @@ public final class World {
     }
 
     public void tick(int delta_t) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
-        long time = 0;
+        long time;
         try {
             long start = System.currentTimeMillis();
             for (Node node : this.nodes) {
@@ -190,12 +190,14 @@ public final class World {
                 e.getMessage()
             ));
         }
-        System.out.println(String.format(
+        if (this.communicator.getMyRank() == 0) {
+            System.out.println(String.format(
                 "time=%ds,real for %ds:%6.4fs,s/r:%6.4f",
                 this.t,
                 delta_t,
-                time / (double)1000,
-                delta_t / (time / (double)1000)
-        ));
+                time / (double) 1000,
+                delta_t / (time / (double) 1000)
+            ));
+        }
     }
 }

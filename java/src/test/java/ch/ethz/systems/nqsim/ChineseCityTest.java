@@ -5,7 +5,7 @@ public final class ChineseCityTest {
     public static void main(String[] args) {
         try {
             ChineseCity chineseCity = new ChineseCity();
-            chineseCity.run(args, "chinese_capital_187x187.json", 2);
+            chineseCity.run(args, "chinese_capital_187x187.json", 3000000);
         }
         catch (Exception e) {
             System.out.println(String.format(

@@ -7,8 +7,9 @@ import mpi.*;
 
 public final class Communicator {
     private static int buffer_size = 100000000;
+//    private static int buffer_size = 100;
     private Map<Integer, Map<Integer, List<Agent>>> sending_agents_by_node_idx_by_rank;
-    private byte[] receive_buffer;
+    private ByteBuffer receive_buffer;
     private ByteBuffer send_buffer;
     private Map<Integer, Integer> local_node_idx_by_global_idx;
     private Map<List<Integer>, Integer> global_node_idx_by_local_idx_and_rank;
@@ -28,8 +29,8 @@ public final class Communicator {
         this.local_node_idx_by_global_idx = new HashMap<>();
         this.global_node_idx_by_local_idx_and_rank = new HashMap<>();
         this.capacity_message_ingredients_by_rank = new HashMap<>();
-        this.receive_buffer = new byte[buffer_size];
-        this.send_buffer = ByteBuffer.allocateDirect(buffer_size);
+        this.receive_buffer = MPI.newByteBuffer(buffer_size);
+        this.send_buffer = MPI.newByteBuffer(buffer_size);
     }
 
     public void shutDown() throws MPIException {
@@ -67,7 +68,7 @@ public final class Communicator {
     }
 
     public Request sendAgentsNB(int rank) throws ExceedingBufferException, MPIException {
-        Map<Integer, List<Agent>> agents_by_node_idx = this.sending_agents_by_node_idx_by_rank.get(rank);
+        Map<Integer, List<Agent>> agents_by_node_idx = this.sending_agents_by_node_idx_by_rank.remove(rank);
         long byte_length = 0;
         if (agents_by_node_idx != null) {
             byte_length = 8 * agents_by_node_idx.size();
@@ -76,9 +77,6 @@ public final class Communicator {
                     byte_length += agent.byteLength();
                 }
             }
-        }
-        else {
-            byte_length = 1;
         }
         if (byte_length > buffer_size) {
             throw new ExceedingBufferException(String.valueOf(byte_length));
@@ -97,17 +95,21 @@ public final class Communicator {
                     agent.serializeToBytes(bytes, offset);
                     offset += agent.byteLength();
                 }
+//                System.out.println(String.format(
+//                    "rank %d: preparing to send %d agents to node %d on rank %d",
+//                    this.getMyRank(),
+//                    agents.size(),
+//                    node_idx,
+//                    rank
+//                ));
             }
         }
-        else {
-            bytes[0] = -1;
-        }
-        System.out.println(String.format(
-            "rank %d: sending %d bytes to %d",
-            this.getMyRank(),
-            byte_length,
-            rank
-        ));
+//        System.out.println(String.format(
+//            "rank %d: sending %d bytes to %d",
+//            this.getMyRank(),
+//            byte_length,
+//            rank
+//        ));
         return this.nonBlockingSend(bytes, rank, 10);
 //        return MPI.COMM_WORLD.Isend(
 //                bytes,
@@ -153,15 +155,15 @@ public final class Communicator {
 
     public void updateLinkCapacitiesFromRank(int rank, World world_to_update) throws NodeException, MPIException {
 //        Status status = MPI.COMM_WORLD.Recv(this.receive_buffer, 0, buffer_size, MPI.BYTE, rank, 11);
-        Status status = this.receive(this.receive_buffer, rank, 11);
+        byte[] bytes = this.receive(rank, 11);
         int offset = 0;
 //        while (offset < status.Get_count(MPI.BYTE)) {
-        while (offset < status.getCount(MPI.BYTE)) {
-            int global_node_idx = Helper.intFromByteArray(this.receive_buffer, offset);
+        while (offset < bytes.length) {
+            int global_node_idx = Helper.intFromByteArray(bytes, offset);
             offset += 4;
-            byte outgoing_link_idx = this.receive_buffer[offset];
+            byte outgoing_link_idx = bytes[offset];
             offset += 1;
-            int availableCapacity = Helper.intFromByteArray(this.receive_buffer, offset);
+            int availableCapacity = Helper.intFromByteArray(bytes, offset);
             offset += 4;
             world_to_update.getNodes().get(this.getLocalNodeIdxFromGlobalIdx(global_node_idx))
                 .getOutgoingLink(outgoing_link_idx)
@@ -171,16 +173,19 @@ public final class Communicator {
 
     public void updateWorldFromRank(int rank, World world_to_update) throws IndexOutOfBoundsException, NodeException, CommunicatorException, MPIException {
 //        Status status = MPI.COMM_WORLD.Recv(this.receive_buffer, 0, buffer_size, MPI.BYTE, rank, 10);
-        Status status = this.receive(this.receive_buffer, rank, 10);
+        byte[] bytes = this.receive(rank, 10);
+//        System.out.println(String.format(
+//            "rank %d: %d bytes received from %d",
+//            this.getMyRank(),
+//            status.getCount(MPI.BYTE),
+//            rank
+//        ));
         int offset = 0;
 //        while (offset < status.Get_count(MPI.BYTE)) {
-        while (offset < status.getCount(MPI.BYTE)) {
-            if (this.receive_buffer[offset] == -1) {
-                break;
-            }
-            int global_node_idx = Helper.intFromByteArray(this.receive_buffer, offset);
+        while (offset < bytes.length) {
+            int global_node_idx = Helper.intFromByteArray(bytes, offset);
             offset += 4;
-            int num_agents = Helper.intFromByteArray(this.receive_buffer, offset);
+            int num_agents = Helper.intFromByteArray(bytes, offset);
             offset += 4;
             if (global_node_idx < 0 || num_agents < 0) {
                 throw new CommunicatorException(String.format("invalid message received; %d; %d", global_node_idx, num_agents));
@@ -191,7 +196,7 @@ public final class Communicator {
                 throw new IndexOutOfBoundsException("no node with index " + node_idx);
             }
             for (int idx = 0; idx < num_agents; idx++) {
-                Agent currentAgent = Agent.deserializeFromBytes(this.receive_buffer, offset);
+                Agent currentAgent = Agent.deserializeFromBytes(bytes, offset);
                 offset += currentAgent.byteLength();
                 int routing_status = node.route_agent(currentAgent, node_idx, this);
                 if (routing_status < 0) {
@@ -203,19 +208,19 @@ public final class Communicator {
                         routing_status
                     ));
                 }
-                System.out.println(String.format(
-                    "transferred agent from rank %d to %d",
-                    rank,
-                    this.getMyRank()
-                ));
+//                System.out.println(String.format(
+//                    "transferred agent from rank %d to %d",
+//                    rank,
+//                    this.getMyRank()
+//                ));
             }
         }
     }
 
     public void communicateAgents(World world_to_update) throws InterruptedException, ExceedingBufferException, CommunicatorException, NodeException, MPIException {
-        System.out.println(String.format("rank %d: starting to communicate agents",
-            my_rank
-        ));
+//        System.out.println(String.format("rank %d: starting to communicate agents",
+//            my_rank
+//        ));
         List<Request> send_requests = new LinkedList<>();
         int my_rank = this.getMyRank();
         int num_ranks = this.getNumberOfRanks();
@@ -225,28 +230,28 @@ public final class Communicator {
             }
             send_requests.add(this.sendAgentsNB(rank));
         }
-        System.out.println(String.format("rank %d: %d send requests ongoing, starting to receive agents",
-            my_rank,
-            send_requests.size()
-        ));
+//        System.out.println(String.format("rank %d: %d send requests ongoing, starting to receive agents",
+//            my_rank,
+//            send_requests.size()
+//        ));
         for (int rank = 0; rank < num_ranks; rank++) {
             if (rank == my_rank) {
                 continue;
             }
-            System.out.println(String.format("rank %d: receiving from %d",
-                my_rank,
-                rank
-            ));
+//            System.out.println(String.format("rank %d: receiving from %d",
+//                my_rank,
+//                rank
+//            ));
             this.updateWorldFromRank(rank, world_to_update);
         }
-        System.out.println(String.format("rank %d: waiting to send to %d recipients",
-            my_rank,
-            send_requests.size()
-        ));
+//        System.out.println(String.format("rank %d: waiting to send to %d recipients",
+//            my_rank,
+//            send_requests.size()
+//        ));
         this.waitAll(send_requests);
-        System.out.println(String.format("rank %d: done waiting",
-            my_rank
-        ));
+//        System.out.println(String.format("rank %d: done waiting",
+//            my_rank
+//        ));
     }
 
     public void communicateCapacities(World world_to_update) throws NodeException, LinkException, MPIException, ExceedingBufferException {
@@ -303,14 +308,18 @@ public final class Communicator {
         }
     }
 
-    public Status receive(byte[] buf, int rank, int tag) throws MPIException {
-        return MPI.COMM_WORLD.recv(buf, 0, MPI.BYTE, rank, tag);
+    public byte[] receive(int rank, int tag) throws MPIException {
+        Status status = MPI.COMM_WORLD.recv(this.receive_buffer, buffer_size, MPI.BYTE, rank, tag);
+        byte[] bytes = new byte[status.getCount(MPI.BYTE)];
+        this.receive_buffer.position(0);
+        this.receive_buffer.get(bytes);
+        return bytes;
     }
 
     public Request nonBlockingSend(byte[] bytes, int rank, int tag) throws MPIException {
         ByteBuffer byteBuffer = MPI.newByteBuffer(bytes.length);
         byteBuffer.put(bytes);
-        return MPI.COMM_WORLD.iSend(byteBuffer, 0, MPI.BYTE, rank, tag);
+        return MPI.COMM_WORLD.iSend(byteBuffer, bytes.length, MPI.BYTE, rank, tag);
     }
 
     public int getMyRank() throws MPIException {
