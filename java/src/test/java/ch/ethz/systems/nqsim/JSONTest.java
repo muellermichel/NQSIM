@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import mpi.MPIException;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -25,7 +26,7 @@ public final class JSONTest {
         assert agentAfter.getPlan().size() == 1;
     }
 
-    void testLoadingFromJSON() throws IOException, NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    void testLoadingFromJSON() throws IOException, NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
         ObjectMapper om = new ObjectMapper();
         ObjectReader worldReader = om.readerFor(World.class);
 

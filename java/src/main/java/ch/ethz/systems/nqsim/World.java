@@ -3,7 +3,7 @@ package ch.ethz.systems.nqsim;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectReader;
-import mpi.*;
+import mpi.MPIException;
 
 import java.io.IOException;
 import java.util.*;
@@ -91,7 +91,7 @@ public final class World {
         return this.nodes;
     }
 
-    public void addRandomAgents(int numOfAgents) throws NodeException, LinkException {
+    public void addRandomAgents(int numOfAgents) throws NodeException, LinkException, MPIException {
         int my_rank = this.communicator.getMyRank();
         Map<String,Node> next_node_by_link_id = new HashMap<>();
         World.applyToAllNodes(this, node -> {
@@ -148,7 +148,7 @@ public final class World {
         }
     }
 
-    public void tick(int delta_t) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    public void tick(int delta_t) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
         long time = 0;
         try {
             long start = System.currentTimeMillis();

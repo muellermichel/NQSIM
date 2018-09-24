@@ -2,6 +2,8 @@ package ch.ethz.systems.nqsim;
 
 // import org.junit.jupiter.api.Test;
 
+import mpi.MPIException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,7 +24,7 @@ public final class TwoNodesTest {
     }
 
 //    @Test
-    void testSingleAgent() throws NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    void testSingleAgent() throws NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
         Agent agent = new Agent(new Plan(new byte[0]));
         this.nodes.get(1).addAgent(agent, (byte) 0);
         World world = new World(this.nodes);

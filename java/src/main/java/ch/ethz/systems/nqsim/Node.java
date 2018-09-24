@@ -2,7 +2,7 @@ package ch.ethz.systems.nqsim;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import mpi.*;
+import mpi.MPIException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +102,7 @@ public final class Node {
         }
     }
 
-    public int route_agent(Agent agent, int node_index, Communicator communicator) throws NodeException {
+    public int route_agent(Agent agent, int node_index, Communicator communicator) throws NodeException, MPIException {
         byte next_link_idx = agent.peekPlan();
         if (next_link_idx == -1) {
             return -1;
@@ -142,7 +142,7 @@ public final class Node {
         return next_link_idx;
     }
 
-    public void route(int node_index, Communicator communicator) throws NodeException {
+    public void route(int node_index, Communicator communicator) throws NodeException, MPIException {
         ListIterator<Link> incoming_link_iterator = this.incoming_links.listIterator();
         while (incoming_link_iterator.hasNext()) {
             int link_idx = incoming_link_iterator.nextIndex();

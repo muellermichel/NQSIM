@@ -2,6 +2,7 @@ package ch.ethz.systems.nqsim;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import mpi.MPIException;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -58,7 +59,7 @@ public final class ChineseCity {
         });
     }
 
-    public static void run(String[] args, String input_file_path, int num_agents) throws WorldException, IOException, NodeException, LinkException, ChineseCityException, CommunicatorException, ExceedingBufferException, InterruptedException {
+    public static void run(String[] args, String input_file_path, int num_agents) throws WorldException, IOException, NodeException, LinkException, ChineseCityException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException {
         Communicator communicator = new Communicator(args);
 
         int my_rank = communicator.getMyRank();
@@ -152,9 +153,10 @@ public final class ChineseCity {
         for (int time=0; time < 600; time += 1) {
             world.tick(1);
         }
-        System.out.println(String.format("world finished with %d agents, %d routed",
-                World.sumOverAllLinks(world, Link::queueLength),
-                World.sumOverAllNodes(world, Node::getRouted)
+        System.out.println(String.format("rank %d: world finished with %d agents, %d routed",
+            my_rank,
+            World.sumOverAllLinks(world, Link::queueLength),
+            World.sumOverAllNodes(world, Node::getRouted)
         ));
         node_iterator = complete_world.getNodes().listIterator();
         while (node_iterator.hasNext()) {
