@@ -11,6 +11,7 @@ import java.util.*;
 public final class World {
     private int t;
     private List<Node> nodes;
+    private  Map<String,Node> next_node_by_link_id;
     public Communicator communicator;
 
     public static void compareAllLinks(World world, World reference_world, LinkComparator operator) {
@@ -69,9 +70,13 @@ public final class World {
         this.t = t;
 
         Map<String, Link> links_by_id = new HashMap<>();
-        for (Node n:this.nodes) {
+        ListIterator<Node> node_iterator = this.nodes.listIterator();
+        while(node_iterator.hasNext()) {
+            int idx = node_iterator.nextIndex();
+            Node n = node_iterator.next();
             for (Link l:n.getIncomingLinks()) {
                 links_by_id.put(l.getId(), l);
+                l.setAssignedNodeIndex(idx);
             }
         }
         for (Map.Entry<String, List<String>> entry : outgoing_link_ids_by_node_index.entrySet()) {
@@ -81,6 +86,12 @@ public final class World {
                 this.nodes.get(node_index).addOutgoingLink(links_by_id.get(link_id));
             }
         }
+        next_node_by_link_id = new HashMap<>();
+        World.applyToAllNodes(this, node -> {
+            for (Link link:node.getIncomingLinks()) {
+                next_node_by_link_id.put(link.getId(), node);
+            }
+        });
     }
 
     public World(List<Node> nodes) {
@@ -92,13 +103,6 @@ public final class World {
     }
 
     public void addRandomAgents(int numOfAgents) throws NodeException, LinkException, MPIException {
-        int my_rank = this.communicator.getMyRank();
-        Map<String,Node> next_node_by_link_id = new HashMap<>();
-        World.applyToAllNodes(this, node -> {
-            for (Link link:node.getIncomingLinks()) {
-                next_node_by_link_id.put(link.getId(), node);
-            }
-        });
         Map<Node,Integer> num_outgoing_links_by_node = new HashMap<>();
         World.applyToAllNodes(this, node -> {
             num_outgoing_links_by_node.put(node, node.getOutgoingLinks().size());
@@ -108,47 +112,29 @@ public final class World {
             int plan_length = randomGenerator.nextInt(40) + 20;
             int start_node_idx = randomGenerator.nextInt(this.nodes.size());
             Node current_node = this.nodes.get(start_node_idx);
+            Node start_node = current_node;
             Link start_link = null;
-            byte[] plan_bytes = null;
+            byte[] plan_bytes = new byte[plan_length];
             for (int leg_idx = 0; leg_idx < plan_length; leg_idx++) {
                 byte next_link_idx = (byte) randomGenerator.nextInt(num_outgoing_links_by_node.get(current_node));
                 Link link = current_node.getOutgoingLink(next_link_idx);
-                if (start_link == null && link.getAssignedRank() == my_rank ) {
+                if (start_link == null) {
                     start_link = link;
                 }
-                else if (start_link == null) {
-                    start_link = link;
-
-                }
-                if (leg_idx > 0 && start_link.getAssignedRank() == my_rank) {
-                    if (plan_bytes == null) {
-                        plan_bytes = new byte[plan_length - 1];
-                    }
-                    plan_bytes[leg_idx - 1] = next_link_idx;
-                }
-                else if (start_link.getAssignedRank() != my_rank) {
-                    if (plan_bytes == null) {
-                        plan_bytes = new byte[plan_length];
-                    }
-                    plan_bytes[leg_idx] = next_link_idx;
-                }
+                plan_bytes[leg_idx] = next_link_idx;
                 current_node = next_node_by_link_id.get(link.getId());
             }
             Agent agent = new Agent(new Plan(plan_bytes));
-            if (start_link.getAssignedRank() == my_rank) {
-                start_link.add(agent);
-            }
-            else {
-                this.communicator.prepareAgentForTransmission(
-                    agent,
-                    start_link.getAssignedRank(),
-                    start_node_idx
-                );
-            }
+            start_link.computeCapacity();
+            start_node.route_agent(agent, start_node_idx, this.communicator);
         }
     }
 
     public void tick(int delta_t) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
+        this.tick(delta_t, null);
+    }
+
+    public void tick(int delta_t, World complete_world) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
         long time;
         try {
             long start = System.currentTimeMillis();
@@ -167,14 +153,14 @@ public final class World {
                     node.route(idx, this.communicator);
                 } catch (NodeException e) {
                     throw new WorldException(String.format(
-                            "node %d: %s",
-                            idx,
-                            e.getMessage()
+                        "node %d: %s",
+                        idx,
+                        e.getMessage()
                     ));
                 }
             }
             if (this.communicator != null) {
-                this.communicator.communicateAgents(this);
+                this.communicator.communicateAgents(this, complete_world);
             }
             for (Node node : this.nodes) {
                 node.finalizeTimestep();

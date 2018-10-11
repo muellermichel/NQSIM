@@ -15,6 +15,7 @@ public final class Link {
     private int free_flow_travel_time;
     private int jam_travel_time;
     private int assigned_rank;
+    private int assigned_node_index;
     private int current_capacity;
     private Queue<Agent> q;
 
@@ -62,6 +63,7 @@ public final class Link {
         this.free_flow_travel_time = this.length / this.free_flow_velocity;
         this.jam_travel_time = this.length / Constants.JAM_VELOCITY;
         this.assigned_rank = 0;
+        this.assigned_node_index = -1;
         this.current_capacity = -1;
         next_id += 1;
     }
@@ -195,5 +197,16 @@ public final class Link {
 
     public int getAssignedRank() {
         return this.assigned_rank;
+    }
+
+    public void setAssignedNodeIndex(int idx) {
+        this.assigned_node_index = idx;
+    }
+
+    public int getAssignedNodeIndex() throws LinkException {
+        if (this.assigned_node_index < 0) {
+            throw new LinkException("node index not yet assigned");
+        }
+        return this.assigned_node_index;
     }
 }

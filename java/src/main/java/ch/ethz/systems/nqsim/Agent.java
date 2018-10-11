@@ -13,6 +13,7 @@ public final class Agent {
     public int time_to_pass_link;
 
     private String id;
+    private byte[] id_bytes;
     private long numeric_id = -1;
     private Plan plan;
     private static long next_id = 0;
@@ -72,7 +73,7 @@ public final class Agent {
                 "id=" + this.getId() +
                 ", current_travel_time=" + current_travel_time +
                 ", time_to_pass_link=" + time_to_pass_link +
-                ", plan=" + plan +
+                ", plan=" + this.plan.toString() +
                 '}';
     }
 
@@ -82,19 +83,33 @@ public final class Agent {
 
     public void serializeToBytes(byte[] bytes, int offset) {
         Helper.intToByteArray(this.current_travel_time, bytes, offset);
-        Helper.intToByteArray(this.time_to_pass_link, bytes, offset + 4);
-        this.plan.serializeToBytes(bytes, offset + 8);
+        offset += 4;
+        Helper.intToByteArray(this.time_to_pass_link, bytes, offset);
+        offset += 4;
+        Helper.intToByteArray(this.getIdBytes().length, bytes, offset);
+        offset += 4;
+        for (int idx = 0; idx < this.getIdBytes().length; idx++) {
+            bytes[offset + idx] = this.getIdBytes()[idx];
+        }
+        offset += this.getIdBytes().length;
+        this.plan.serializeToBytes(bytes, offset);
     }
 
     public static Agent deserializeFromBytes(byte[] bytes, int offset) {
         int current_travel_time = Helper.intFromByteArray(bytes, offset);
-        int time_to_pass_link = Helper.intFromByteArray(bytes, offset + 4);
-        Plan plan = Plan.deserializeFromBytes(bytes, offset + 8);
-        return new Agent(next_id, plan, current_travel_time, time_to_pass_link);
+        offset += 4;
+        int time_to_pass_link = Helper.intFromByteArray(bytes, offset);
+        offset += 4;
+        int num_id_bytes = Helper.intFromByteArray(bytes, offset);
+        offset += 4;
+        String agent_id = new String(bytes, offset, num_id_bytes);
+        offset += num_id_bytes;
+        Plan plan = Plan.deserializeFromBytes(bytes, offset);
+        return new Agent(agent_id, plan, current_travel_time, time_to_pass_link);
     }
 
     public int byteLength() {
-        return 8 + this.plan.byteLength();
+        return 12 + this.getIdBytes().length + this.plan.byteLength();
     }
 
     public void tick(int delta_t) {
@@ -115,6 +130,14 @@ public final class Agent {
         }
         return this.id;
     }
+
+    public byte[] getIdBytes() {
+        if (this.id_bytes == null) {
+            this.id_bytes = this.getId().getBytes();
+        }
+        return this.id_bytes;
+    }
+
     public Plan getPlan() {
         return this.plan;
     }

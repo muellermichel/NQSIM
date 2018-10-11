@@ -12,7 +12,7 @@ public final class Communicator {
     private ByteBuffer receive_buffer;
     private ByteBuffer send_buffer;
     private Map<Integer, Integer> local_node_idx_by_global_idx;
-    private Map<List<Integer>, Integer> global_node_idx_by_local_idx_and_rank;
+    private Map<Integer, Integer> global_node_idx_by_local_idx_and_rank;
     private Map<Integer, List<CapacityMessageIngredients>> capacity_message_ingredients_by_rank;
     private int my_rank = -1;
     private int num_ranks = -1;
@@ -21,16 +21,16 @@ public final class Communicator {
         try {
             MPI.Init(args);
             MPI.COMM_WORLD.setErrhandler(MPI.ERRORS_RETURN);
+            this.receive_buffer = MPI.newByteBuffer(buffer_size);
+            this.send_buffer = MPI.newByteBuffer(buffer_size);
         }
-        catch (NoClassDefFoundError e) {
+        catch (NoClassDefFoundError|UnsatisfiedLinkError e) {
             //ignore <- user has no MPI, we try and make it work on single process
         }
         this.sending_agents_by_node_idx_by_rank = new HashMap<>();
         this.local_node_idx_by_global_idx = new HashMap<>();
         this.global_node_idx_by_local_idx_and_rank = new HashMap<>();
         this.capacity_message_ingredients_by_rank = new HashMap<>();
-        this.receive_buffer = MPI.newByteBuffer(buffer_size);
-        this.send_buffer = MPI.newByteBuffer(buffer_size);
     }
 
     public void shutDown() throws MPIException {
@@ -94,6 +94,9 @@ public final class Communicator {
                 for (Agent agent : agents) {
                     agent.serializeToBytes(bytes, offset);
                     offset += agent.byteLength();
+                    if (agent.getId().equals("3495")) {
+                        System.out.println("3495 appended to send to node " + node_idx + ". plan:" + agent.getPlan().toString());
+                    }
                 }
 //                System.out.println(String.format(
 //                    "rank %d: preparing to send %d agents to node %d on rank %d",
@@ -171,7 +174,7 @@ public final class Communicator {
         }
     }
 
-    public void updateWorldFromRank(int rank, World world_to_update) throws IndexOutOfBoundsException, NodeException, CommunicatorException, MPIException {
+    public void updateWorldFromRank(int rank, World world_to_update, World complete_world) throws IndexOutOfBoundsException, CommunicatorException, MPIException {
 //        Status status = MPI.COMM_WORLD.Recv(this.receive_buffer, 0, buffer_size, MPI.BYTE, rank, 10);
         byte[] bytes = this.receive(rank, 10);
 //        System.out.println(String.format(
@@ -195,10 +198,34 @@ public final class Communicator {
             if (node == null) {
                 throw new IndexOutOfBoundsException("no node with index " + node_idx);
             }
+            Agent firstAgent = null;
             for (int idx = 0; idx < num_agents; idx++) {
                 Agent currentAgent = Agent.deserializeFromBytes(bytes, offset);
+                if (firstAgent == null) {
+                    firstAgent = currentAgent;
+                }
                 offset += currentAgent.byteLength();
-                int routing_status = node.route_agent(currentAgent, node_idx, this);
+                int routing_status = -3;
+//                String plan_before_route = null;
+                try {
+//                    plan_before_route = currentAgent.getPlan().toString();
+                    routing_status = node.route_agent(currentAgent, node_idx, this);
+                }
+                catch (NodeException e) {
+                    throw new CommunicatorException(String.format(
+                            "trying to transfer agent %s%s from rank %d to %d, global node %s(%s), local node %s(%s) failed: %s",
+                            currentAgent.getId(),
+                            currentAgent.getPlan().toString(),
+//                            plan_before_route,
+                            rank,
+                            this.getMyRank(),
+                            global_node_idx,
+                            complete_world.getNodes().get(global_node_idx).toString(),
+                            node_idx,
+                            node.toString(),
+                            e.getMessage()
+                    ));
+                }
                 if (routing_status < 0) {
                     throw new CommunicatorException(String.format(
                         "transferring agent from rank %d to %d failed on node with index %d: %d",
@@ -208,16 +235,22 @@ public final class Communicator {
                         routing_status
                     ));
                 }
-//                System.out.println(String.format(
-//                    "transferred agent from rank %d to %d",
-//                    rank,
-//                    this.getMyRank()
-//                ));
             }
+            System.out.println(String.format(
+                    "transfered %d agents (first:%s,tt:%d,lt:%d) from rank %d to %d (node %d global, %d local)",
+                    num_agents,
+                    firstAgent.getId(),
+                    firstAgent.current_travel_time,
+                    firstAgent.time_to_pass_link,
+                    rank,
+                    this.getMyRank(),
+                    global_node_idx,
+                    node_idx
+            ));
         }
     }
 
-    public void communicateAgents(World world_to_update) throws InterruptedException, ExceedingBufferException, CommunicatorException, NodeException, MPIException {
+    public void communicateAgents(World world_to_update, World complete_world) throws InterruptedException, ExceedingBufferException, CommunicatorException, NodeException, MPIException {
 //        System.out.println(String.format("rank %d: starting to communicate agents",
 //            my_rank
 //        ));
@@ -242,7 +275,7 @@ public final class Communicator {
 //                my_rank,
 //                rank
 //            ));
-            this.updateWorldFromRank(rank, world_to_update);
+            this.updateWorldFromRank(rank, world_to_update, complete_world);
         }
 //        System.out.println(String.format("rank %d: waiting to send to %d recipients",
 //            my_rank,
@@ -279,17 +312,79 @@ public final class Communicator {
         }
         this.local_node_idx_by_global_idx.put(global_idx, local_idx);
         this.global_node_idx_by_local_idx_and_rank.put(
-            Arrays.asList(local_idx, local_rank),
+            getHashCode(local_idx, local_rank),
             global_idx
         );
+        assert this.global_node_idx_by_local_idx_and_rank.get(
+            getHashCode(local_idx, local_rank)
+        ) == global_idx;
     }
 
     public int getLocalNodeIdxFromGlobalIdx(int global_idx) {
-        return this.local_node_idx_by_global_idx.get(global_idx);
+        Integer result = this.local_node_idx_by_global_idx.get(global_idx);
+        if (result == null) {
+            return -1;
+        }
+        return result;
+    }
+
+    private static int getHashCode(int local_idx, int local_rank) {
+        return Arrays.deepHashCode(new Integer[]{local_idx, local_rank});
     }
 
     public int getGlobalNodeIdxFromLocalIdx(int local_idx, int local_rank) {
-        return this.global_node_idx_by_local_idx_and_rank.get(Arrays.asList(local_idx, local_rank));
+        Integer result = this.global_node_idx_by_local_idx_and_rank.get(getHashCode(local_idx, local_rank));
+        if (result == null) {
+            return -1;
+        }
+        return result;
+    }
+
+    //this is rather inefficient and should only be used for testing
+    public int getRankFromGlobalIdx(int global_idx) throws CommunicatorException, MPIException {
+        int local_idx = this.getLocalNodeIdxFromGlobalIdx(global_idx);
+        for (int rank=0; rank < this.getNumberOfRanks(); rank++) {
+            if (this.getGlobalNodeIdxFromLocalIdx(local_idx, rank) == global_idx) {
+                return rank;
+            }
+        }
+        throw new CommunicatorException("no rank assigned for global idx " + global_idx);
+    }
+
+    public void validateDecomposition(World world, World complete_world) throws CommunicatorException, NodeException, MPIException {
+        for (int idx=0; idx < complete_world.getNodes().size(); idx++) {
+            int local_idx = this.getLocalNodeIdxFromGlobalIdx(idx);
+            if (local_idx == -1) {
+                throw new CommunicatorException("Global index " + idx + " has no local mapping");
+            }
+            int local_rank = this.getRankFromGlobalIdx(idx);
+            if (local_rank == this.getMyRank()) {
+                Node global_node = complete_world.getNodes().get(idx);
+                Node local_node = world.getNodes().get(local_idx);
+                if (global_node.getIncomingLinks().size() != local_node.getIncomingLinks().size()) {
+                    throw new CommunicatorException(String.format(
+                        "not same number of links for global node %d vs local node %d",
+                        idx,
+                        local_idx
+                    ));
+                }
+                for (byte link_idx=0; link_idx < global_node.getIncomingLinks().size(); link_idx++) {
+                    Link global_link = global_node.getIncomingLink(link_idx);
+                    Link local_link = local_node.getIncomingLink(link_idx);
+                    if (
+                        !global_link.getId().equals(local_link.getId())
+                    || global_link.getFreeFlowTravelTime() != local_link.getFreeFlowTravelTime()
+                    ) {
+                        throw new CommunicatorException(
+                            "global and local links not the same: "
+                            + global_link.toString()
+                            + " vs "
+                            + local_link.toString()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     public void waitAll(List<Request> requests) throws MPIException {
@@ -302,6 +397,9 @@ public final class Communicator {
 //            }
 //            Thread.sleep(5);
 //        }
+        if (requests.size() == 0) {
+            return;
+        }
         Request.waitAll(requests.toArray(new Request[requests.size()]));
         for (Request req : requests) {
             req.free();

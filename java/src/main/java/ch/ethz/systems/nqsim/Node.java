@@ -4,15 +4,21 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import mpi.MPIException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 public final class Node {
     private List<Link> incoming_links;
     private List<Link> outgoing_links;
     private long routed;
     private int assigned_rank;
+
+    public static List<String> stringsFromLinks(List<Link> links, LinkToStringOperator operator) {
+        List<String> result = new LinkedList<>();
+        for (Link link : links) {
+            result.add(operator.stringOp(link));
+        }
+        return result;
+    }
 
     @JsonCreator
     public Node(@JsonProperty("incoming_links") List<Link> incoming_links) {
@@ -28,6 +34,14 @@ public final class Node {
         this.outgoing_links = outgoing_links;
         this.routed = 0;
         this.assigned_rank = 0;
+    }
+
+    public String toString() {
+        return String.format(
+            "[%s]->[%s]",
+            String.join(",", stringsFromLinks(this.incoming_links, link -> link.getId())),
+            String.join(",", stringsFromLinks(this.outgoing_links, link -> link.getId()))
+        );
     }
 
     public void addIncomingLink(Link link) {
@@ -102,7 +116,7 @@ public final class Node {
         }
     }
 
-    public int route_agent(Agent agent, int node_index, Communicator communicator) throws NodeException, MPIException {
+    public byte route_agent(Agent agent, int node_index, Communicator communicator) throws NodeException, MPIException {
         byte next_link_idx = agent.peekPlan();
         if (next_link_idx == -1) {
             return -1;
@@ -119,17 +133,37 @@ public final class Node {
                     e.getMessage()
             ));
         }
+        agent.pollPlan();
         if (communicator != null) {
             int my_rank = communicator.getMyRank();
             if (next_link.getAssignedRank() != my_rank) {
-                communicator.prepareAgentForTransmission(
-                        agent,
-                        next_link.getAssignedRank(),
-                        communicator.getGlobalNodeIdxFromLocalIdx(node_index, my_rank)
-                );
+                int global_idx = -2;
+                int assigned_rank = -1;
+                int assigned_node_index = -1;
+                try {
+                    global_idx = next_link.getAssignedNodeIndex(); //only our local nodes have local indices set - others have global ones.
+                    assigned_rank = next_link.getAssignedRank();
+                    assigned_node_index = next_link.getAssignedNodeIndex();
+                }
+                catch (LinkException e) {
+                    throw new NodeException(e.getMessage());
+                }
+                if (global_idx < 0) {
+                    throw new NodeException(String.format(
+                        "link (out idx %d)'s global index could not be resolved from local index %d on rank %d: %d",
+                        next_link_idx,
+                        assigned_node_index,
+                        assigned_rank,
+                        global_idx
+                    ));
+                }
+                if (agent.getId().equals("3495")) {
+                    System.out.println("preparing 3495 to send to " + global_idx + "(Link " + next_link.getId() + "). plan:" + agent.getPlan().toString());
+                }
+                communicator.prepareAgentForTransmission(agent, assigned_rank, global_idx);
+                return next_link_idx;
             }
         }
-        agent.pollPlan();
         try {
             next_link.add(agent);
         } catch (LinkException e) {
@@ -150,18 +184,26 @@ public final class Node {
             Agent current_agent = link.peek();
             try {
                 while (current_agent != null && current_agent.current_travel_time >= current_agent.time_to_pass_link) {
-                    int next_link_idx = this.route_agent(current_agent, node_index, communicator);
+                    byte next_link_idx = this.route_agent(current_agent, node_index, communicator);
                     if (next_link_idx == -2) {
                         break;
                     }
-//                    System.err.println(String.format(
-//                        "node %d: agent %s has crossed over from link %d(%s) to %d",
-//                        node_index,
-//                        current_agent.getId(),
-//                        link_idx,
-//                        link.getId(),
-//                        next_link_idx
-//                    ));
+                    if (current_agent.getId().equals("3355") || this.getOutgoingLink(next_link_idx).getAssignedRank() != communicator.getMyRank()) {
+                        System.out.println(String.format(
+                            "node %d: agent %s%s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s) (rank %d -> %d)",
+                            node_index,
+                            current_agent.getId(),
+                            current_agent.getPlan().toString(),
+                            current_agent.current_travel_time,
+                            current_agent.time_to_pass_link,
+                            link_idx,
+                            link.getId(),
+                            next_link_idx,
+                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
+                            communicator.getMyRank(),
+                            this.getOutgoingLink(next_link_idx).getAssignedRank()
+                        ));
+                    }
                     try {
                         link.removeFirstWaiting();
                     }
@@ -179,7 +221,7 @@ public final class Node {
             catch (NodeException e) {
                 throw new NodeException(String.format(
                         "agent %s: %s",
-                        current_agent.getId(),
+                        (current_agent != null) ? current_agent.getId() : "none",
                         e.getMessage()
                 ));
             }

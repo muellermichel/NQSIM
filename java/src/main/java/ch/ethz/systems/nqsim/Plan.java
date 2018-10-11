@@ -3,6 +3,8 @@ package ch.ethz.systems.nqsim;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 public final class Plan {
     private byte[] bytes;
     private int peekIdx;
@@ -35,6 +37,14 @@ public final class Plan {
 
     public int size() {
         return this.bytes.length - this.peekIdx;
+    }
+
+    public String toString() {
+        byte[] bytes = new byte[this.bytes.length - this.peekIdx];
+        for (int idx = 0; idx < this.bytes.length - this.peekIdx; idx++) {
+            bytes[idx] = this.bytes[this.peekIdx + idx];
+        }
+        return Arrays.toString(bytes);
     }
 
     @JsonValue
