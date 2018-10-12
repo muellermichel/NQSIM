@@ -16,8 +16,9 @@ public final class Communicator {
     private Map<Integer, List<CapacityMessageIngredients>> capacity_message_ingredients_by_rank;
     private int my_rank = -1;
     private int num_ranks = -1;
+    private int max_effective_num_ranks = -1;
 
-    public Communicator(String[] args) throws MPIException {
+    public Communicator(String[] args, int max_effective_num_ranks) throws MPIException {
         try {
             MPI.Init(args);
             MPI.COMM_WORLD.setErrhandler(MPI.ERRORS_RETURN);
@@ -31,6 +32,11 @@ public final class Communicator {
         this.local_node_idx_by_global_idx = new HashMap<>();
         this.global_node_idx_by_local_idx_and_rank = new HashMap<>();
         this.capacity_message_ingredients_by_rank = new HashMap<>();
+        this.max_effective_num_ranks = max_effective_num_ranks;
+    }
+
+    public Communicator(String[] args) throws MPIException {
+        this(args, -1);
     }
 
     public void shutDown() throws MPIException {
@@ -440,12 +446,17 @@ public final class Communicator {
         }
         try {
 //            num_ranks = MPI.COMM_WORLD.Size();
-            num_ranks = MPI.COMM_WORLD.getSize();
+            num_ranks = (this.max_effective_num_ranks > 0) ?
+                java.lang.Math.min(MPI.COMM_WORLD.getSize(), this.max_effective_num_ranks) : MPI.COMM_WORLD.getSize();
         }
         catch (NoClassDefFoundError e) {
             num_ranks = 1;
         }
         return num_ranks;
+    }
+
+    public boolean isSleeping() throws MPIException {
+        return this.getMyRank() >= this.getNumberOfRanks();
     }
 
     public String getProcessorName() throws MPIException {

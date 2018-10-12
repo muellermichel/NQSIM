@@ -2,6 +2,7 @@ package ch.ethz.systems.nqsim;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import mpi.Comm;
 import mpi.MPIException;
 import org.apache.commons.io.IOUtils;
 
@@ -11,6 +12,7 @@ import java.util.*;
 public final class ChineseCity {
     public World world;
     public World complete_world;
+    private Communicator communicator;
 
     public static void checkAgainstReference(World world, String filename) throws IOException {
         ObjectMapper om = new ObjectMapper();
@@ -60,8 +62,12 @@ public final class ChineseCity {
         });
     }
 
-    public ChineseCity(String[] args, String input_file_path) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
-        Communicator communicator = new Communicator(args);
+    public ChineseCity(String[] args, String input_file_path, int max_effective_num_ranks) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
+        Communicator communicator = new Communicator(args, max_effective_num_ranks);
+        this.communicator = communicator;
+        if (this.communicator.isSleeping()) {
+            return;
+        }
         int my_rank = communicator.getMyRank();
         int num_ranks = communicator.getNumberOfRanks();
         int num_rank_rows = (int)Math.sqrt(num_ranks);
@@ -243,6 +249,9 @@ public final class ChineseCity {
     }
 
     public void initializeRandomAgents(int num_agents) throws MPIException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
+        if (this.communicator.isSleeping()) {
+            return;
+        }
         if (this.world.communicator.getMyRank() == 0) {
             System.out.println("adding agents on rank 0");
             this.complete_world.addRandomAgents(num_agents);
@@ -254,34 +263,36 @@ public final class ChineseCity {
     }
 
     public void run() throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException {
-        for (int time=0; time < 600; time += 1) {
-            this.world.tick(1, this.complete_world);
-        }
-        System.out.println(String.format("rank %d: world finished with %d agents, %d routed",
-            this.world.communicator.getMyRank(),
-            World.sumOverAllLinks(world, Link::queueLength),
-            World.sumOverAllNodes(world, Node::getRouted)
-        ));
-        ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();
-        while (node_iterator.hasNext()) {
-            int node_idx = node_iterator.nextIndex();
-            Node node = node_iterator.next();
-            ListIterator<Link> link_iterator = node.getIncomingLinks().listIterator();
-            while (link_iterator.hasNext()) {
-                int link_idx = link_iterator.nextIndex();
-                Link link = link_iterator.next();
-                if (link.queueLength() > 0) {
-                    System.out.println(String.format(
-                            "rank %d, node %d, link %d: %d agents",
-                            this.world.communicator.getMyRank(),
-                            node_idx,
-                            link_idx,
-                            link.queueLength()
-                    ));
+        if (!this.communicator.isSleeping()) {
+            for (int time=0; time < 600; time += 1) {
+                this.world.tick(1, this.complete_world);
+            }
+            System.out.println(String.format("rank %d: world finished with %d agents, %d routed",
+                    this.world.communicator.getMyRank(),
+                    World.sumOverAllLinks(world, Link::queueLength),
+                    World.sumOverAllNodes(world, Node::getRouted)
+            ));
+            ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();
+            while (node_iterator.hasNext()) {
+                int node_idx = node_iterator.nextIndex();
+                Node node = node_iterator.next();
+                ListIterator<Link> link_iterator = node.getIncomingLinks().listIterator();
+                while (link_iterator.hasNext()) {
+                    int link_idx = link_iterator.nextIndex();
+                    Link link = link_iterator.next();
+                    if (link.queueLength() > 0) {
+                        System.out.println(String.format(
+                                "rank %d, node %d, link %d: %d agents",
+                                this.world.communicator.getMyRank(),
+                                node_idx,
+                                link_idx,
+                                link.queueLength()
+                        ));
+                    }
                 }
             }
+        //checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
         }
-//        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
-        this.world.communicator.shutDown();
+        this.communicator.shutDown();
     }
 }
