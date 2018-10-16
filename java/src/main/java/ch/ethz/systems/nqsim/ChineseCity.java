@@ -255,13 +255,16 @@ public final class ChineseCity {
     }
 
     public void run() throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException {
+        long start = System.currentTimeMillis();
         for (int time=0; time < 600; time += 1) {
             this.world.tick(1, this.complete_world);
         }
-        System.out.println(String.format("rank %d: world finished with %d agents, %d routed",
+        long time = System.currentTimeMillis() - start;
+        System.out.println(String.format("rank %d: world finished with %d agents, %d routed, avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),
-            World.sumOverAllNodes(world, Node::getRouted)
+            World.sumOverAllNodes(world, Node::getRouted),
+            600 / (time / (double) 1000)
         ));
 //        ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();
 //        while (node_iterator.hasNext()) {

@@ -247,18 +247,18 @@ public final class Communicator {
                         ));
                     }
                 }
-                System.out.println(String.format(
-                    "transfered %d agents (first:%s,tt:%d,lt:%d) from rank %d to %d (node %d global, %d local, incoming link %d)",
-                    num_agents,
-                    firstAgent.getId(),
-                    firstAgent.current_travel_time,
-                    firstAgent.time_to_pass_link,
-                    rank,
-                    this.getMyRank(),
-                    global_node_idx,
-                    node_idx,
-                    link_idx
-                ));
+//                System.out.println(String.format(
+//                    "transfered %d agents (first:%s,tt:%d,lt:%d) from rank %d to %d (node %d global, %d local, incoming link %d)",
+//                    num_agents,
+//                    firstAgent.getId(),
+//                    firstAgent.current_travel_time,
+//                    firstAgent.time_to_pass_link,
+//                    rank,
+//                    this.getMyRank(),
+//                    global_node_idx,
+//                    node_idx,
+//                    link_idx
+//                ));
             }
         }
     }

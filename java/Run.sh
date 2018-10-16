@@ -20,7 +20,6 @@ cd "${script_dir}"
 mpi_jar_path=$(dirname "$(which mpirun)")/../lib/mpi.jar
 timestamp=$(date +"%Y-%m-%d-%H_%M")
 mpirun \
-	--mca pml ob1 --mca btl vader,self \
 	-np "${np}" \
 	java \
 		-enableassertions \
