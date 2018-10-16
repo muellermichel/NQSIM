@@ -8,7 +8,7 @@ import mpi.*;
 public final class Communicator {
     private static int buffer_size = 100000000;
 //    private static int buffer_size = 100;
-    private Map<Integer, Map<Integer, List<Agent>>> sending_agents_by_node_idx_by_rank;
+    private Map<Integer, Map<Integer, Map<Byte, List<Agent>>>> sending_agents_by_link_idx_by_node_idx_by_rank;
     private ByteBuffer receive_buffer;
     private ByteBuffer send_buffer;
     private Map<Integer, Integer> local_node_idx_by_global_idx;
@@ -19,7 +19,9 @@ public final class Communicator {
 
     public Communicator(String[] args) throws MPIException {
         try {
+            System.out.println("attempting to initialize MPI");
             MPI.Init(args);
+            System.out.println("finished initializing");
             MPI.COMM_WORLD.setErrhandler(MPI.ERRORS_RETURN);
             this.receive_buffer = MPI.newByteBuffer(buffer_size);
             this.send_buffer = MPI.newByteBuffer(buffer_size);
@@ -27,7 +29,7 @@ public final class Communicator {
         catch (NoClassDefFoundError|UnsatisfiedLinkError e) {
             //ignore <- user has no MPI, we try and make it work on single process
         }
-        this.sending_agents_by_node_idx_by_rank = new HashMap<>();
+        this.sending_agents_by_link_idx_by_node_idx_by_rank = new HashMap<>();
         this.local_node_idx_by_global_idx = new HashMap<>();
         this.global_node_idx_by_local_idx_and_rank = new HashMap<>();
         this.capacity_message_ingredients_by_rank = new HashMap<>();
@@ -42,12 +44,14 @@ public final class Communicator {
         }
     }
 
-    public void prepareAgentForTransmission(Agent agent, int rank, int global_node_idx) {
-        Map<Integer, List<Agent>> agents_by_node_idx = this.sending_agents_by_node_idx_by_rank
+    public void prepareAgentForTransmission(Agent agent, int rank, int global_node_idx, byte incoming_link_idx) {
+        Map<Integer, Map<Byte, List<Agent>>> agents_by_link_idx_by_node_idx = this.sending_agents_by_link_idx_by_node_idx_by_rank
             .computeIfAbsent(rank, k -> new HashMap<>());
-        List<Agent> agents_for_rank_and_node_idx = agents_by_node_idx
-            .computeIfAbsent(global_node_idx, k -> new LinkedList<>());
-        agents_for_rank_and_node_idx.add(agent);
+        Map<Byte, List<Agent>> agents_by_link_idx = agents_by_link_idx_by_node_idx
+            .computeIfAbsent(global_node_idx, k -> new HashMap<>());
+        List<Agent> agents = agents_by_link_idx
+            .computeIfAbsent(incoming_link_idx, k -> new LinkedList<>());
+        agents.add(agent);
     }
 
     public void addLink(Node sourceNode, Link link, int sourceNodeIdx, int outgoingLinkIdx) throws MPIException {
@@ -68,13 +72,16 @@ public final class Communicator {
     }
 
     public Request sendAgentsNB(int rank) throws ExceedingBufferException, MPIException {
-        Map<Integer, List<Agent>> agents_by_node_idx = this.sending_agents_by_node_idx_by_rank.remove(rank);
+        Map<Integer, Map<Byte, List<Agent>>> agents_by_link_idx_by_node_idx = this.sending_agents_by_link_idx_by_node_idx_by_rank.remove(rank);
         long byte_length = 0;
-        if (agents_by_node_idx != null) {
-            byte_length = 8 * agents_by_node_idx.size();
-            for (List<Agent> agents : agents_by_node_idx.values()) {
-                for (Agent agent:agents) {
-                    byte_length += agent.byteLength();
+        if (agents_by_link_idx_by_node_idx != null) {
+            byte_length = 8 * agents_by_link_idx_by_node_idx.size(); // allocate integer for each node idx plus integer for the number of links represented per node
+            for (Map<Byte, List<Agent>> agents_by_link_idx : agents_by_link_idx_by_node_idx.values()) {
+                byte_length += 5 * agents_by_link_idx.size(); // allocate byte for each link idx per node plus an integer to represent length of agents per link per node
+                for (List<Agent> agents : agents_by_link_idx.values()) {
+                    for (Agent agent:agents) {
+                        byte_length += agent.byteLength(); // allocate space for each agent
+                    }
                 }
             }
         }
@@ -82,29 +89,37 @@ public final class Communicator {
             throw new ExceedingBufferException(String.valueOf(byte_length));
         }
         byte[] bytes = new byte[(int)byte_length];
-        if (agents_by_node_idx != null) {
+        if (agents_by_link_idx_by_node_idx != null) {
             int offset = 0;
-            for (Map.Entry<Integer, List<Agent>> entry : agents_by_node_idx.entrySet()) {
+            for (Map.Entry<Integer, Map<Byte, List<Agent>>> entry : agents_by_link_idx_by_node_idx.entrySet()) {
                 Integer node_idx = entry.getKey();
-                List<Agent> agents = entry.getValue();
+                Map<Byte, List<Agent>> agents_by_link_idx = entry.getValue();
                 Helper.intToByteArray(node_idx, bytes, offset);
                 offset += 4;
-                Helper.intToByteArray(agents.size(), bytes, offset);
+                Helper.intToByteArray(agents_by_link_idx.size(), bytes, offset);
                 offset += 4;
-                for (Agent agent : agents) {
-                    agent.serializeToBytes(bytes, offset);
-                    offset += agent.byteLength();
-                    if (agent.getId().equals("3495")) {
-                        System.out.println("3495 appended to send to node " + node_idx + ". plan:" + agent.getPlan().toString());
+                for (Map.Entry<Byte, List<Agent>> link_entry : agents_by_link_idx.entrySet()) {
+                    byte link_idx = link_entry.getKey();
+                    List<Agent> agents = link_entry.getValue();
+                    bytes[offset] = link_idx;
+                    offset += 1;
+                    Helper.intToByteArray(agents.size(), bytes, offset);
+                    offset += 4;
+                    for (Agent agent : agents) {
+                        agent.serializeToBytes(bytes, offset);
+                        offset += agent.byteLength();
+//                        if (agent.getId().equals("3495")) {
+//                            System.out.println("3495 appended to send to node " + node_idx + ". plan:" + agent.getPlan().toString());
+//                        }
                     }
+                    //                System.out.println(String.format(
+                    //                    "rank %d: preparing to send %d agents to node %d on rank %d",
+                    //                    this.getMyRank(),
+                    //                    agents.size(),
+                    //                    node_idx,
+                    //                    rank
+                    //                ));
                 }
-//                System.out.println(String.format(
-//                    "rank %d: preparing to send %d agents to node %d on rank %d",
-//                    this.getMyRank(),
-//                    agents.size(),
-//                    node_idx,
-//                    rank
-//                ));
             }
         }
 //        System.out.println(String.format(
@@ -188,56 +203,52 @@ public final class Communicator {
         while (offset < bytes.length) {
             int global_node_idx = Helper.intFromByteArray(bytes, offset);
             offset += 4;
-            int num_agents = Helper.intFromByteArray(bytes, offset);
+            int num_links = Helper.intFromByteArray(bytes, offset);
             offset += 4;
-            if (global_node_idx < 0 || num_agents < 0) {
-                throw new CommunicatorException(String.format("invalid message received; %d; %d", global_node_idx, num_agents));
+            if (global_node_idx < 0 || num_links < 0) {
+                throw new CommunicatorException(String.format("invalid message received; %d; %d", global_node_idx, num_links));
             }
             int node_idx = this.getLocalNodeIdxFromGlobalIdx(global_node_idx);
             Node node = world_to_update.getNodes().get(node_idx);
             if (node == null) {
                 throw new IndexOutOfBoundsException("no node with index " + node_idx);
             }
-            Agent firstAgent = null;
-            for (int idx = 0; idx < num_agents; idx++) {
-                Agent currentAgent = Agent.deserializeFromBytes(bytes, offset);
-                if (firstAgent == null) {
-                    firstAgent = currentAgent;
+            for (int link_message_idx = 0; link_message_idx < num_links; link_message_idx++) {
+                byte link_idx = bytes[offset];
+                offset += 1;
+                int num_agents = Helper.intFromByteArray(bytes, offset);
+                offset += 4;
+                if (link_idx < 0 || num_agents < 0) {
+                    throw new CommunicatorException(String.format("invalid message received; %d; %d", link_idx, num_agents));
                 }
-                offset += currentAgent.byteLength();
-                int routing_status = -3;
-//                String plan_before_route = null;
-                try {
-//                    plan_before_route = currentAgent.getPlan().toString();
-                    routing_status = node.route_agent(currentAgent, node_idx, this);
+                Agent firstAgent = null;
+                for (int idx = 0; idx < num_agents; idx++) {
+                    Agent currentAgent = Agent.deserializeFromBytes(bytes, offset);
+                    offset += currentAgent.byteLength();
+                    if (firstAgent == null) {
+                        firstAgent = currentAgent;
+                    }
+                    try {
+                        node.getIncomingLink(link_idx).add(currentAgent);
+                    }
+                    catch (NodeException|LinkException e) {
+                        throw new CommunicatorException(String.format(
+                                "trying to transfer agent %s%s from rank %d to %d, global node %s(%s), local node %s(%s), incoming link idx %d failed: %s",
+                                currentAgent.getId(),
+                                currentAgent.getPlan().toString(),
+                                rank,
+                                this.getMyRank(),
+                                global_node_idx,
+                                complete_world.getNodes().get(global_node_idx).toString(),
+                                node_idx,
+                                node.toString(),
+                                link_idx,
+                                e.getMessage()
+                        ));
+                    }
                 }
-                catch (NodeException e) {
-                    throw new CommunicatorException(String.format(
-                            "trying to transfer agent %s%s from rank %d to %d, global node %s(%s), local node %s(%s) failed: %s",
-                            currentAgent.getId(),
-                            currentAgent.getPlan().toString(),
-//                            plan_before_route,
-                            rank,
-                            this.getMyRank(),
-                            global_node_idx,
-                            complete_world.getNodes().get(global_node_idx).toString(),
-                            node_idx,
-                            node.toString(),
-                            e.getMessage()
-                    ));
-                }
-                if (routing_status < 0) {
-                    throw new CommunicatorException(String.format(
-                        "transferring agent from rank %d to %d failed on node with index %d: %d",
-                        rank,
-                        this.getMyRank(),
-                        node_idx,
-                        routing_status
-                    ));
-                }
-            }
-            System.out.println(String.format(
-                    "transfered %d agents (first:%s,tt:%d,lt:%d) from rank %d to %d (node %d global, %d local)",
+                System.out.println(String.format(
+                    "transfered %d agents (first:%s,tt:%d,lt:%d) from rank %d to %d (node %d global, %d local, incoming link %d)",
                     num_agents,
                     firstAgent.getId(),
                     firstAgent.current_travel_time,
@@ -245,8 +256,10 @@ public final class Communicator {
                     rank,
                     this.getMyRank(),
                     global_node_idx,
-                    node_idx
-            ));
+                    node_idx,
+                    link_idx
+                ));
+            }
         }
     }
 

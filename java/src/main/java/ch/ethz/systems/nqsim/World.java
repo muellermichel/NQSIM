@@ -74,9 +74,13 @@ public final class World {
         while(node_iterator.hasNext()) {
             int idx = node_iterator.nextIndex();
             Node n = node_iterator.next();
-            for (Link l:n.getIncomingLinks()) {
+            ListIterator<Link> link_iterator = n.getIncomingLinks().listIterator();
+            while(link_iterator.hasNext()) {
+                byte list_idx = (byte)link_iterator.nextIndex();
+                Link l = link_iterator.next();
                 links_by_id.put(l.getId(), l);
                 l.setAssignedNodeIndex(idx);
+                l.setAssignedIncomingLinkIdx(list_idx);
             }
         }
         for (Map.Entry<String, List<String>> entry : outgoing_link_ids_by_node_index.entrySet()) {
@@ -102,7 +106,7 @@ public final class World {
         return this.nodes;
     }
 
-    public void addRandomAgents(int numOfAgents) throws NodeException, LinkException, MPIException {
+    public void addRandomAgents(int numOfAgents) throws NodeException, LinkException, WorldException, MPIException {
         Map<Node,Integer> num_outgoing_links_by_node = new HashMap<>();
         World.applyToAllNodes(this, node -> {
             num_outgoing_links_by_node.put(node, node.getOutgoingLinks().size());
@@ -126,7 +130,9 @@ public final class World {
             }
             Agent agent = new Agent(new Plan(plan_bytes));
             start_link.computeCapacity();
-            start_node.route_agent(agent, start_node_idx, this.communicator);
+            if (start_node.route_agent(agent, start_node_idx, this.communicator) < 0) {
+                throw new WorldException("node full, cannot add randomly anymore");
+            }
         }
     }
 

@@ -16,6 +16,7 @@ public final class Link {
     private int jam_travel_time;
     private int assigned_rank;
     private int assigned_node_index;
+    private byte assigned_incoming_link_idx;
     private int current_capacity;
     private Queue<Agent> q;
 
@@ -197,6 +198,14 @@ public final class Link {
 
     public int getAssignedRank() {
         return this.assigned_rank;
+    }
+
+    public void setAssignedIncomingLinkIdx(byte idx) {
+        this.assigned_incoming_link_idx = idx;
+    }
+
+    public byte getAssignedIncomingLinkIdx() {
+        return this.assigned_incoming_link_idx;
     }
 
     public void setAssignedNodeIndex(int idx) {

@@ -157,10 +157,10 @@ public final class Node {
                         global_idx
                     ));
                 }
-                if (agent.getId().equals("3495")) {
-                    System.out.println("preparing 3495 to send to " + global_idx + "(Link " + next_link.getId() + "). plan:" + agent.getPlan().toString());
-                }
-                communicator.prepareAgentForTransmission(agent, assigned_rank, global_idx);
+//                if (agent.getId().equals("3495")) {
+//                    System.out.println("preparing 3495 to send to " + global_idx + "(Link " + next_link.getId() + "). plan:" + agent.getPlan().toString());
+//                }
+                communicator.prepareAgentForTransmission(agent, assigned_rank, global_idx, next_link.getAssignedIncomingLinkIdx());
                 return next_link_idx;
             }
         }
@@ -188,22 +188,22 @@ public final class Node {
                     if (next_link_idx == -2) {
                         break;
                     }
-                    if (current_agent.getId().equals("3355") || this.getOutgoingLink(next_link_idx).getAssignedRank() != communicator.getMyRank()) {
-                        System.out.println(String.format(
-                            "node %d: agent %s%s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s) (rank %d -> %d)",
-                            node_index,
-                            current_agent.getId(),
-                            current_agent.getPlan().toString(),
-                            current_agent.current_travel_time,
-                            current_agent.time_to_pass_link,
-                            link_idx,
-                            link.getId(),
-                            next_link_idx,
-                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
-                            communicator.getMyRank(),
-                            this.getOutgoingLink(next_link_idx).getAssignedRank()
-                        ));
-                    }
+//                    if (current_agent.getId().equals("3355") || this.getOutgoingLink(next_link_idx).getAssignedRank() != communicator.getMyRank()) {
+//                        System.out.println(String.format(
+//                            "node %d: agent %s%s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s) (rank %d -> %d)",
+//                            node_index,
+//                            current_agent.getId(),
+//                            current_agent.getPlan().toString(),
+//                            current_agent.current_travel_time,
+//                            current_agent.time_to_pass_link,
+//                            link_idx,
+//                            link.getId(),
+//                            next_link_idx,
+//                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
+//                            communicator.getMyRank(),
+//                            this.getOutgoingLink(next_link_idx).getAssignedRank()
+//                        ));
+//                    }
                     try {
                         link.removeFirstWaiting();
                     }

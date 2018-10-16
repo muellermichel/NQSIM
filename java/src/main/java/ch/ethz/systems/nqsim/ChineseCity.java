@@ -61,6 +61,7 @@ public final class ChineseCity {
     }
 
     public ChineseCity(String[] args, String input_file_path) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
+        System.out.println("one");
         Communicator communicator = new Communicator(args);
         int my_rank = communicator.getMyRank();
         int num_ranks = communicator.getNumberOfRanks();
@@ -242,9 +243,9 @@ public final class ChineseCity {
         }
     }
 
-    public void initializeRandomAgents(int num_agents) throws MPIException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    public void initializeRandomAgents(int num_agents) throws MPIException, WorldException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
         if (this.world.communicator.getMyRank() == 0) {
-            System.out.println("adding agents on rank 0");
+            System.out.println("adding " + num_agents + " agents on rank 0");
             this.complete_world.addRandomAgents(num_agents);
         }
         for (Node node : this.complete_world.getNodes()) {
@@ -262,25 +263,25 @@ public final class ChineseCity {
             World.sumOverAllLinks(world, Link::queueLength),
             World.sumOverAllNodes(world, Node::getRouted)
         ));
-        ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();
-        while (node_iterator.hasNext()) {
-            int node_idx = node_iterator.nextIndex();
-            Node node = node_iterator.next();
-            ListIterator<Link> link_iterator = node.getIncomingLinks().listIterator();
-            while (link_iterator.hasNext()) {
-                int link_idx = link_iterator.nextIndex();
-                Link link = link_iterator.next();
-                if (link.queueLength() > 0) {
-                    System.out.println(String.format(
-                            "rank %d, node %d, link %d: %d agents",
-                            this.world.communicator.getMyRank(),
-                            node_idx,
-                            link_idx,
-                            link.queueLength()
-                    ));
-                }
-            }
-        }
+//        ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();
+//        while (node_iterator.hasNext()) {
+//            int node_idx = node_iterator.nextIndex();
+//            Node node = node_iterator.next();
+//            ListIterator<Link> link_iterator = node.getIncomingLinks().listIterator();
+//            while (link_iterator.hasNext()) {
+//                int link_idx = link_iterator.nextIndex();
+//                Link link = link_iterator.next();
+//                if (link.queueLength() > 0) {
+//                    System.out.println(String.format(
+//                        "rank %d, node %d, link %d: %d agents",
+//                        this.world.communicator.getMyRank(),
+//                        node_idx,
+//                        link_idx,
+//                        link.queueLength()
+//                    ));
+//                }
+//            }
+//        }
 //        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
         this.world.communicator.shutDown();
     }
