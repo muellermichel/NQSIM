@@ -143,6 +143,7 @@ public final class World {
     public void tick(int delta_t, World complete_world) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
         long time;
         try {
+            EventLog.setTime(t);
             long start = System.currentTimeMillis();
             for (Node node : this.nodes) {
                 node.tick(delta_t);

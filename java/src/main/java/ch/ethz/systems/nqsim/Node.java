@@ -188,22 +188,24 @@ public final class Node {
                     if (next_link_idx == -2) {
                         break;
                     }
-//                    if (current_agent.getId().equals("3355") || this.getOutgoingLink(next_link_idx).getAssignedRank() != communicator.getMyRank()) {
-//                        System.out.println(String.format(
-//                            "node %d: agent %s%s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s) (rank %d -> %d)",
-//                            node_index,
-//                            current_agent.getId(),
-//                            current_agent.getPlan().toString(),
-//                            current_agent.current_travel_time,
-//                            current_agent.time_to_pass_link,
-//                            link_idx,
-//                            link.getId(),
-//                            next_link_idx,
-//                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
-//                            communicator.getMyRank(),
-//                            this.getOutgoingLink(next_link_idx).getAssignedRank()
-//                        ));
-//                    }
+                    EventLog.log(
+                        current_agent.getId(),
+                        String.format(
+                            "node %d: agent %s%s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s, ql=%d) (rank %d -> %d)",
+                            node_index,
+                            current_agent.getId(),
+                            current_agent.getPlan().toString(),
+                            current_agent.current_travel_time,
+                            current_agent.time_to_pass_link,
+                            link_idx,
+                            link.getId(),
+                            next_link_idx,
+                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
+                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).queueLength() : 0,
+                            communicator.getMyRank(),
+                            this.getOutgoingLink(next_link_idx).getAssignedRank()
+                        )
+                    );
                     try {
                         link.removeFirstWaiting();
                     }

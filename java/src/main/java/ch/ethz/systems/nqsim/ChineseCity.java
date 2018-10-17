@@ -1,5 +1,6 @@
 package ch.ethz.systems.nqsim;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import mpi.MPIException;
@@ -254,12 +255,18 @@ public final class ChineseCity {
         this.world.communicator.communicateAgents(world, this.complete_world);
     }
 
-    public void run() throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException {
+    public void run() throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException, IOException {
+        EventLog.clear();
         long start = System.currentTimeMillis();
         for (int time=0; time < 600; time += 1) {
             this.world.tick(1, this.complete_world);
         }
         long time = System.currentTimeMillis() - start;
+        this.world.communicator.communicateEventLog();
+        if (this.world.communicator.getMyRank() == 0) {
+            EventLog.print_all();
+//            System.out.println(EventLog.toJson());
+        }
         System.out.println(String.format("rank %d: world finished with %d agents, %d routed, avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),

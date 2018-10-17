@@ -1,8 +1,10 @@
 package ch.ethz.systems.nqsim;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import mpi.*;
 
 public final class Communicator {
@@ -139,6 +141,32 @@ public final class Communicator {
 //        );
     }
 
+    public Request sendRawBytesNB(int rank, byte[] bytes) throws MPIException {
+        return this.nonBlockingSend(bytes, rank, 12);
+    }
+
+    public byte[] receiveRawBytes(int rank) throws MPIException {
+        return this.receive(rank, 12);
+    }
+
+    public void communicateEventLog() throws MPIException, IOException, WorldException {
+        List<Request> send_requests = new LinkedList<>();
+        int my_rank = this.getMyRank();
+        int num_ranks = this.getNumberOfRanks();
+        if (my_rank != 0) {
+            send_requests.add(this.sendRawBytesNB(
+                0,
+                EventLog.toJson().getBytes("UTF-8")
+            ));
+        }
+        else {
+            for (int rank = 1; rank < num_ranks; rank++) {
+                EventLog.mergeJson(new String(receiveRawBytes(rank), "UTF-8"));
+            }
+        }
+        this.waitAll(send_requests);
+    }
+
     public Request sendCapacitiesNB(int rank) throws ExceedingBufferException, LinkException, MPIException {
         List<CapacityMessageIngredients> capacity_message_factories = this.capacity_message_ingredients_by_rank.get(rank);
         long byte_length = 0;
@@ -264,9 +292,6 @@ public final class Communicator {
     }
 
     public void communicateAgents(World world_to_update, World complete_world) throws InterruptedException, ExceedingBufferException, CommunicatorException, NodeException, MPIException {
-//        System.out.println(String.format("rank %d: starting to communicate agents",
-//            my_rank
-//        ));
         List<Request> send_requests = new LinkedList<>();
         int my_rank = this.getMyRank();
         int num_ranks = this.getNumberOfRanks();
@@ -276,28 +301,13 @@ public final class Communicator {
             }
             send_requests.add(this.sendAgentsNB(rank));
         }
-//        System.out.println(String.format("rank %d: %d send requests ongoing, starting to receive agents",
-//            my_rank,
-//            send_requests.size()
-//        ));
         for (int rank = 0; rank < num_ranks; rank++) {
             if (rank == my_rank) {
                 continue;
             }
-//            System.out.println(String.format("rank %d: receiving from %d",
-//                my_rank,
-//                rank
-//            ));
             this.updateWorldFromRank(rank, world_to_update, complete_world);
         }
-//        System.out.println(String.format("rank %d: waiting to send to %d recipients",
-//            my_rank,
-//            send_requests.size()
-//        ));
         this.waitAll(send_requests);
-//        System.out.println(String.format("rank %d: done waiting",
-//            my_rank
-//        ));
     }
 
     public void communicateCapacities(World world_to_update) throws NodeException, LinkException, MPIException, ExceedingBufferException {
