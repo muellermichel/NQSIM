@@ -86,12 +86,6 @@ public final class ChineseCity {
         World complete_world = World.fromJson(IOUtils.toByteArray(is), worldReader);
         complete_world.communicator = communicator;
         int num_total_nodes = complete_world.getNodes().size();
-        System.out.println(String.format(my_rank + ": world loaded with %d agents, %d links, %d nodes",
-                World.sumOverAllLinks(complete_world, Link::queueLength),
-                World.sumOverAllLinks(complete_world, link -> 1),
-                num_total_nodes
-        ));
-
         World world = null;
         int edge_length = (int)Math.sqrt(num_total_nodes);
         if (edge_length*edge_length != num_total_nodes) {
@@ -110,19 +104,28 @@ public final class ChineseCity {
             Node node = node_iterator.next();
             node_map.put(idx, node);
         }
+        System.out.println(String.format(my_rank + ": world loaded with %d agents, %d links, %d nodes; decomposing into %d x %d ranks times %d x %d cells (except bottom+rightmost ranks)",
+            World.sumOverAllLinks(complete_world, Link::queueLength),
+            World.sumOverAllLinks(complete_world, link -> 1),
+            num_total_nodes,
+            num_rank_rows,
+            num_rank_cols,
+            max_num_cell_rows,
+            max_num_cell_cols
+        ));
         for (int rank_row = 0; rank_row < num_rank_rows; rank_row++) {
             for (int rank_col = 0; rank_col < num_rank_cols; rank_col++) {
                 List<Node> curr_nodes = new ArrayList<>();
                 int local_node_idx = 0;
                 int assigned_rank = rank_row * num_rank_cols + rank_col;
                 if (rank_col == num_rank_cols - 1) {
-                    num_cell_cols = (int)Math.floor(edge_length/(double)num_rank_cols);
+                    num_cell_cols = edge_length - (num_rank_cols - 1) * max_num_cell_cols;
                 }
                 else {
                     num_cell_cols = max_num_cell_cols;
                 }
                 if (rank_row == num_rank_rows - 1) {
-                    num_cell_rows = (int)Math.floor(edge_length/(double)num_rank_rows);
+                    num_cell_rows = edge_length - (num_rank_rows - 1) * max_num_cell_rows;
                 }
                 else {
                     num_cell_rows = max_num_cell_rows;
@@ -135,11 +138,26 @@ public final class ChineseCity {
                         curr_node.setAssignedRank(assigned_rank);
                         curr_nodes.add(curr_node);
                         if (communicator.getLocalNodeIdxFromGlobalIdx(global_node_index) != -1) {
+                            System.out.println("error when setting up local indices");
                             throw new ChineseCityException(String.format(
-                                    "%d: global node index %d already assigned: %d",
-                                    my_rank,
-                                    global_node_index,
-                                    communicator.getLocalNodeIdxFromGlobalIdx(global_node_index)
+                                "%d: global node index %d already assigned: %d:%d (row %d(of %d)*%d:%d(of %d), col %d(of %d)*%d:%d(of %d), edge length %d) -> cannot assign %d:%d",
+                                my_rank,
+                                global_node_index,
+                                communicator.getRankFromGlobalIdx(global_node_index),
+                                communicator.getLocalNodeIdxFromGlobalIdx(global_node_index),
+                                rank_row,
+                                num_rank_rows,
+                                max_num_cell_rows,
+                                local_row,
+                                num_cell_rows,
+                                rank_col,
+                                num_rank_cols,
+                                max_num_cell_cols,
+                                local_col,
+                                num_cell_cols,
+                                edge_length,
+                                assigned_rank,
+                                local_node_idx
                             ));
                         }
                         communicator.setPairOfLocalAndGlobalNodeIndices(
@@ -181,6 +199,7 @@ public final class ChineseCity {
         if (world == null) {
             return;
         }
+        System.out.println("validating decomp.");
         communicator.validateDecomposition(world, complete_world);
 //        if (my_rank == complete_world.getNodes().get(16550).getAssignedRank()) {
 //            int local_16550 = communicator.getLocalNodeIdxFromGlobalIdx(16550);
@@ -260,7 +279,7 @@ public final class ChineseCity {
             this.world.tick(1, this.complete_world);
         }
         long time = System.currentTimeMillis() - start;
-        this.world.communicator.communicateEventLog();
+//        this.world.communicator.communicateEventLog();
 //        if (this.world.communicator.getMyRank() == 0) {
 //            EventLog.print_all();
 //            System.out.println(EventLog.toJson());

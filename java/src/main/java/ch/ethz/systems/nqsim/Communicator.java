@@ -375,9 +375,19 @@ public final class Communicator {
     public int getRankFromGlobalIdx(int global_idx) throws CommunicatorException, MPIException {
         int local_idx = this.getLocalNodeIdxFromGlobalIdx(global_idx);
         for (int rank=0; rank < this.getNumberOfRanks(); rank++) {
-            if (this.getGlobalNodeIdxFromLocalIdx(local_idx, rank) == global_idx) {
+            int stored_global_node_idx = this.getGlobalNodeIdxFromLocalIdx(local_idx, rank);
+            if (stored_global_node_idx == global_idx) {
                 return rank;
             }
+//            if (stored_global_node_idx != -1) {
+//                throw new CommunicatorException(String.format(
+//                    "invalid mapping: %d->%d->%d (rank %d)",
+//                    global_idx,
+//                    local_idx,
+//                    stored_global_node_idx,
+//                    rank
+//                ));
+//            }
         }
         throw new CommunicatorException("no rank assigned for global idx " + global_idx);
     }
