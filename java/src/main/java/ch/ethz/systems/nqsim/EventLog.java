@@ -33,6 +33,24 @@ public class EventLog {
             .computeIfAbsent(time, k -> new TreeMap<>());
     }
 
+    public static Map<Integer, Map<String, List<String>>> getDataCopy() {
+        Map<Integer, Map<String, List<String>>> copy = new TreeMap<>();
+        for (Map.Entry<Integer, Map<String, List<String>>> e : instance.entries_by_agent_id_by_time.entrySet()) {
+            int time = e.getKey();
+            Map<String, List<String>> entries_by_agent_id = e.getValue();
+            Map<String, List<String>> copied_entries_by_agent_id = copy.computeIfAbsent(time, k -> new TreeMap<>());
+            for (Map.Entry<String, List<String>> f : entries_by_agent_id.entrySet()) {
+                String agent_id = f.getKey();
+                List<String> log_entries = f.getValue();
+                List<String> copied_entries = copied_entries_by_agent_id.computeIfAbsent(agent_id, k -> new LinkedList<>());
+                for (String log_entry : log_entries) {
+                    copied_entries.add(log_entry);
+                }
+            }
+        }
+        return copy;
+    }
+
     public static void log(String agent_id, String entry) {
         List<String> entries = instance.current_entries_by_agent_id.computeIfAbsent(agent_id, k -> new LinkedList<>());
         entries.add(entry);

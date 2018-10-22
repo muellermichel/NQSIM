@@ -35,6 +35,10 @@ public final class Agent {
         return numeric_id;
     }
 
+    public static void resetAutoIds() {
+        next_id = 0;
+    }
+
     @JsonCreator
     public Agent(
         @JsonProperty("id") String id,

@@ -18,6 +18,7 @@ public final class Communicator {
     private Map<Integer, List<CapacityMessageIngredients>> capacity_message_ingredients_by_rank;
     private int my_rank = -1;
     private int num_ranks = -1;
+    public int num_ranks_override = -1;
 
     public Communicator(String[] args) throws MPIException {
         try {
@@ -31,6 +32,10 @@ public final class Communicator {
         catch (NoClassDefFoundError|UnsatisfiedLinkError e) {
             //ignore <- user has no MPI, we try and make it work on single process
         }
+        resetData();
+    }
+
+    public void resetData() {
         this.sending_agents_by_link_idx_by_node_idx_by_rank = new HashMap<>();
         this.local_node_idx_by_global_idx = new HashMap<>();
         this.global_node_idx_by_local_idx_and_rank = new HashMap<>();
@@ -154,6 +159,7 @@ public final class Communicator {
         int my_rank = this.getMyRank();
         int num_ranks = this.getNumberOfRanks();
         if (my_rank != 0) {
+            System.out.println(my_rank + " sending event log");
             send_requests.add(this.sendRawBytesNB(
                 0,
                 EventLog.toJson().getBytes("UTF-8")
@@ -161,10 +167,12 @@ public final class Communicator {
         }
         else {
             for (int rank = 1; rank < num_ranks; rank++) {
+                System.out.println(my_rank + " receiving event log from " + rank);
                 EventLog.mergeJson(new String(receiveRawBytes(rank), "UTF-8"));
             }
         }
         this.waitAll(send_requests);
+        System.out.println(my_rank + " sending done");
     }
 
     public Request sendCapacitiesNB(int rank) throws ExceedingBufferException, LinkException, MPIException {
@@ -457,7 +465,14 @@ public final class Communicator {
         return my_rank;
     }
 
-    public int getNumberOfRanks() throws MPIException {
+    public int getNumberOfRanks() throws  MPIException {
+        return this.getNumberOfRanks(true);
+    }
+
+    public int getNumberOfRanks(boolean allow_override) throws MPIException {
+        if (allow_override && num_ranks_override > 0) {
+            return num_ranks_override;
+        }
         if (num_ranks != -1) {
             return num_ranks;
         }

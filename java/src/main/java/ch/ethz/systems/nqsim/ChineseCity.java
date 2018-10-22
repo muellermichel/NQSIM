@@ -61,9 +61,7 @@ public final class ChineseCity {
         });
     }
 
-    public ChineseCity(String[] args, String input_file_path) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
-        System.out.println("one");
-        Communicator communicator = new Communicator(args);
+    public ChineseCity(String input_file_path, Communicator communicator) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
         int my_rank = communicator.getMyRank();
         int num_ranks = communicator.getNumberOfRanks();
         int num_rank_rows = (int)Math.sqrt(num_ranks);
@@ -181,7 +179,7 @@ public final class ChineseCity {
             throw new ChineseCityException(my_rank + ": " + node_map.size() + " nodes have not been assigned to ranks");
         }
         if (world == null) {
-            throw new ChineseCityException(my_rank + ": no local world initialized");
+            return;
         }
         communicator.validateDecomposition(world, complete_world);
 //        if (my_rank == complete_world.getNodes().get(16550).getAssignedRank()) {
@@ -263,10 +261,10 @@ public final class ChineseCity {
         }
         long time = System.currentTimeMillis() - start;
         this.world.communicator.communicateEventLog();
-        if (this.world.communicator.getMyRank() == 0) {
-            EventLog.print_all();
+//        if (this.world.communicator.getMyRank() == 0) {
+//            EventLog.print_all();
 //            System.out.println(EventLog.toJson());
-        }
+//        }
         System.out.println(String.format("rank %d: world finished with %d agents, %d routed, avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),
@@ -293,6 +291,5 @@ public final class ChineseCity {
 //            }
 //        }
 //        checkAgainstReference(world,"chinese_capital_3M_187x187_result.json");
-        this.world.communicator.shutDown();
     }
 }

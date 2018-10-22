@@ -191,10 +191,10 @@ public final class Node {
                     EventLog.log(
                         current_agent.getId(),
                         String.format(
-                            "node %d: agent %s%s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s, ql=%d) (rank %d -> %d)",
+                            "node %d: agent %s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s, ql=%d) (rank %d -> %d)",
                             node_index,
                             current_agent.getId(),
-                            current_agent.getPlan().toString(),
+//                            current_agent.getPlan().toString(),
                             current_agent.current_travel_time,
                             current_agent.time_to_pass_link,
                             link_idx,

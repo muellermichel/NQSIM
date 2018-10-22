@@ -27,6 +27,10 @@ public final class Link {
         return String.valueOf(id);
     }
 
+    public static void resetAutoIds() {
+        next_id = 0;
+    }
+
     @JsonCreator
     public Link(
             @JsonProperty("id") String id,
