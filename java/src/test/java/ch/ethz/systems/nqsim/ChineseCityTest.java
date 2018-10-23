@@ -139,7 +139,8 @@ public final class ChineseCityTest {
         Communicator communicator = new Communicator(args);
 //        if (2 <= final_num_agents) runReferenceTests(2, communicator);
 //        if (100 <= final_num_agents) runReferenceTests(100, communicator);
-        if (final_num_agents != 2 && final_num_agents != 100) runReferenceTests(final_num_agents, communicator);
+//        if (final_num_agents != 2 && final_num_agents != 100) runReferenceTests(final_num_agents, communicator);
+        runReferenceTests(final_num_agents, communicator);
         communicator.shutDown();
     }
 }

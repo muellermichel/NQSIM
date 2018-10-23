@@ -282,12 +282,13 @@ public final class ChineseCity {
 //        this.world.communicator.communicateEventLog();
 //        if (this.world.communicator.getMyRank() == 0) {
 //            EventLog.print_all();
-//            System.out.println(EventLog.toJson());
+////            System.out.println(EventLog.toJson());
 //        }
-        System.out.println(String.format("rank %d: world finished with %d agents, %d routed, avg. s/r %6.4f",
+        System.out.println(String.format("rank %d: world finished with %d agents, %d routed, %6.4f%% nodes occupied avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),
             World.sumOverAllNodes(world, Node::getRouted),
+            World.sumIfOverAllNodes(world, node -> !node.isInactive()) / (double) this.world.getNodes().size() * 100,
             600 / (time / (double) 1000)
         ));
 //        ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();

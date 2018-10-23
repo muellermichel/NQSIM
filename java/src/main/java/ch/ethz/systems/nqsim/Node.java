@@ -9,6 +9,7 @@ import java.util.*;
 public final class Node {
     private List<Link> incoming_links;
     private List<Link> outgoing_links;
+    private Link[] active_links;
     private long routed;
     private int assigned_rank;
 
@@ -32,6 +33,7 @@ public final class Node {
     public Node(List<Link> incoming_links, List<Link> outgoing_links) {
         this.incoming_links = incoming_links;
         this.outgoing_links = outgoing_links;
+        this.active_links = new Link[this.incoming_links.size()];
         this.routed = 0;
         this.assigned_rank = 0;
     }
@@ -111,12 +113,15 @@ public final class Node {
     }
 
     public void tick(int delta_t) {
-        for (Link link:this.incoming_links) {
+        for (Link link:this.active_links) {
+            if (link == null) {
+                break;
+            }
             link.tick(delta_t);
         }
     }
 
-    public byte route_agent(Agent agent, int node_index, Communicator communicator) throws NodeException, MPIException {
+    public byte route_agent(Agent agent, Communicator communicator) throws NodeException, MPIException {
         byte next_link_idx = agent.peekPlan();
         if (next_link_idx == -1) {
             return -1;
@@ -176,28 +181,26 @@ public final class Node {
         return next_link_idx;
     }
 
-    public void route(int node_index, Communicator communicator) throws NodeException, MPIException {
-        ListIterator<Link> incoming_link_iterator = this.incoming_links.listIterator();
-        while (incoming_link_iterator.hasNext()) {
-            int link_idx = incoming_link_iterator.nextIndex();
-            Link link = incoming_link_iterator.next();
+    public void route(Communicator communicator) throws NodeException, MPIException {
+        for (Link link:this.active_links) {
+            if (link == null) {
+                break;
+            }
             Agent current_agent = link.peek();
             try {
                 while (current_agent != null && current_agent.current_travel_time >= current_agent.time_to_pass_link) {
-                    byte next_link_idx = this.route_agent(current_agent, node_index, communicator);
+                    byte next_link_idx = this.route_agent(current_agent, communicator);
                     if (next_link_idx == -2) {
                         break;
                     }
 //                    EventLog.log(
 //                        current_agent.getId(),
 //                        String.format(
-//                            "node %d: agent %s(tt:%d,lt:%d) has crossed over from link %d(%s) to %d(%s, ql=%d) (rank %d -> %d)",
-//                            node_index,
+//                            "agent %s(tt:%d,lt:%d) has crossed over from link %s to %d(%s, ql=%d) (rank %d -> %d)",
 //                            current_agent.getId(),
 ////                            current_agent.getPlan().toString(),
 //                            current_agent.current_travel_time,
 //                            current_agent.time_to_pass_link,
-//                            link_idx,
 //                            link.getId(),
 //                            next_link_idx,
 //                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
@@ -210,11 +213,7 @@ public final class Node {
                         link.removeFirstWaiting();
                     }
                     catch (LinkException e) {
-                        throw new NodeException(String.format(
-                                "link %d: %s",
-                                link_idx,
-                                e.getMessage()
-                        ));
+                        throw new NodeException(e.getMessage());
                     }
                     this.routed += 1;
                     current_agent = link.peek();
@@ -230,10 +229,26 @@ public final class Node {
         }
     }
 
-    public void computeCapacities() {
-        for (Link link : this.incoming_links) {
+    public void computeCapacities() throws LinkException {
+        ListIterator<Link> listIterator = this.incoming_links.listIterator();
+        int next_active_link_idx = 0;
+        while (listIterator.hasNext()) {
+            int incoming_link_idx = listIterator.nextIndex();
+            Link link = listIterator.next();
             link.computeCapacity();
+            if (link.isEmpty()) {
+                continue;
+            }
+            this.active_links[next_active_link_idx] = link;
+            next_active_link_idx++;
         }
+        for (int idx = next_active_link_idx; idx < this.active_links.length; idx++) {
+            this.active_links[idx] = null;
+        }
+    }
+
+    public boolean isInactive() {
+        return this.active_links[0] == null;
     }
 
     public void finalizeTimestep() {

@@ -95,6 +95,10 @@ public final class Link {
         return this.availableCapacity() > 0;
     }
 
+    public boolean isEmpty() throws LinkException {
+        return this.availableCapacity() == this.jam_capacity;
+    }
+
     public int availableCapacity() throws LinkException {
         if (this.current_capacity == -1) {
             throw new LinkException("capacity not yet computed for " + this.getId());
