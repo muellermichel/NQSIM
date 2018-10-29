@@ -13,6 +13,13 @@ if [ "$2" != "" ]; then
 	nagents="$2"
 fi
 
+hosts_option=""
+if [ "$HOSTS" != "" ] && [ -f $HOSTS ]; then
+   echo "using ${HOSTS}:"
+   cat ${HOSTS}
+   hosts_option="--hostfile ${HOSTS}"
+fi
+
 prev_dir=$(pwd)
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd "${script_dir}"
@@ -21,6 +28,7 @@ mpi_jar_path=$(dirname "$(which mpirun)")/../lib/mpi.jar
 timestamp=$(date +"%Y-%m-%d-%H_%M")
 mpirun \
 	-np "${np}" \
+	${hosts_option} \
 	java \
 		-Xmx3G \
 		-enableassertions \
