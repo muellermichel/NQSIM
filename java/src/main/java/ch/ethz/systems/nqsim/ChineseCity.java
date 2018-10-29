@@ -279,12 +279,12 @@ public final class ChineseCity {
             this.world.tick(1, this.complete_world);
         }
         long time = System.currentTimeMillis() - start;
-        this.world.communicator.communicateEventLog();
-        if (this.world.communicator.getMyRank() == 0) {
-            System.out.println("------------Event Log on Rank 0:---------------");
-            EventLog.print_all();
-//            System.out.println(EventLog.toJson());
-        }
+//        this.world.communicator.communicateEventLog();
+//        if (this.world.communicator.getMyRank() == 0) {
+//            System.out.println("------------Event Log on Rank 0:---------------");
+//            EventLog.print_all();
+////            System.out.println(EventLog.toJson());
+//        }
         System.out.println(String.format("rank %d: world finished with %d agents, %d routed, %6.4f%% nodes occupied avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),
