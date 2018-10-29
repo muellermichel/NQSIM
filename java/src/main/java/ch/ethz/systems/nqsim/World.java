@@ -116,6 +116,11 @@ public final class World {
         this(nodes, 0, new HashMap<>());
     }
 
+    public World(World world) {
+        this(world.getNodes(), 0, new HashMap<>());
+        this.agents = world.agents;
+    }
+
     public List<Node> getNodes() {
         return this.nodes;
     }
