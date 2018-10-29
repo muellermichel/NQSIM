@@ -16,6 +16,7 @@ public final class Agent {
     private byte[] id_bytes;
     private long numeric_id = -1;
     private Plan plan;
+    public int local_idx = -1;
     private static long next_id = 0;
     private static int is_using_auto_id = -1;
 

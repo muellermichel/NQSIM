@@ -12,6 +12,7 @@ public final class World {
     private int t;
     private List<Node> nodes;
     private Node[] active_nodes;
+    private ArrayList<Agent> agents;
     private  Map<String,Node> next_node_by_link_id;
     public Communicator communicator;
 
@@ -108,6 +109,7 @@ public final class World {
             }
         });
         this.active_nodes = new Node[this.nodes.size()];
+        this.agents = new ArrayList<>();
     }
 
     public World(List<Node> nodes) {
@@ -119,6 +121,7 @@ public final class World {
     }
 
     public void addRandomAgents(int numOfAgents) throws NodeException, LinkException, WorldException, MPIException {
+        agents.ensureCapacity(agents.size() + numOfAgents);
         Map<Node,Integer> num_outgoing_links_by_node = new HashMap<>();
         World.applyToAllNodes(this, node -> {
             num_outgoing_links_by_node.put(node, node.getOutgoingLinks().size());
@@ -141,6 +144,8 @@ public final class World {
                 current_node = next_node_by_link_id.get(link.getId());
             }
             Agent agent = new Agent(new Plan(plan_bytes));
+            agent.local_idx = agents.size();
+            agents.add(agent);
             start_link.computeCapacity();
             if (start_node.route_agent(agent, this.communicator) < 0) {
                 throw new WorldException("node full, cannot add randomly anymore");
@@ -174,12 +179,15 @@ public final class World {
             compcap_time = System.currentTimeMillis() - start_compcap;
 
             long start_node_update = start;
-            for (Node node : this.active_nodes) {
-                if (node == null) {
-                    break;
-                }
-                node.tick(delta_t);
+            for (Agent agent : this.agents) {
+                agent.tick(delta_t);
             }
+//            for (Node node : this.active_nodes) {
+//                if (node == null) {
+//                    break;
+//                }
+//                node.tick(delta_t);
+//            }
             node_update_time = System.currentTimeMillis() - start_node_update;
 
             long start_capcom = System.currentTimeMillis();
