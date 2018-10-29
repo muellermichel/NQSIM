@@ -142,7 +142,7 @@ public final class World {
             }
             Agent agent = new Agent(new Plan(plan_bytes));
             start_link.computeCapacity();
-            if (start_node.route_agent(agent, this.communicator) < 0) {
+            if (start_node.route_agent(agent, this.communicator, 0) < 0) {
                 throw new WorldException("node full, cannot add randomly anymore");
             }
         }
@@ -173,13 +173,13 @@ public final class World {
             }
             compcap_time = System.currentTimeMillis() - start_compcap;
 
-            long start_node_update = start;
-            for (Node node : this.active_nodes) {
-                if (node == null) {
-                    break;
-                }
-                node.tick(delta_t);
-            }
+            long start_node_update = System.currentTimeMillis();
+//            for (Node node : this.active_nodes) {
+//                if (node == null) {
+//                    break;
+//                }
+//                node.tick(delta_t);
+//            }
             node_update_time = System.currentTimeMillis() - start_node_update;
 
             long start_capcom = System.currentTimeMillis();
@@ -188,13 +188,15 @@ public final class World {
             }
             capcom_time = System.currentTimeMillis() - start_capcom;
 
+            this.t += 1;
+
             long start_route = System.currentTimeMillis();
             for (Node node:this.active_nodes) {
                 if (node == null) {
                     break;
                 }
                 try {
-                    node.route(this.communicator);
+                    node.route(this.communicator, this.t);
                 } catch (NodeException e) {
                     throw new WorldException(e.getMessage());
                 }
@@ -203,14 +205,13 @@ public final class World {
 
             long start_agentcom = System.currentTimeMillis();
             if (this.communicator != null) {
-                this.communicator.communicateAgents(this, complete_world);
+                this.communicator.communicateAgents(this, complete_world, this.t);
             }
             agentcom_time = System.currentTimeMillis() - start_agentcom;
 
             for (Node node : this.nodes) {
                 node.finalizeTimestep();
             }
-            this.t += 1;
             time = System.currentTimeMillis() - start;
         }
         catch (NodeException | LinkException e) {

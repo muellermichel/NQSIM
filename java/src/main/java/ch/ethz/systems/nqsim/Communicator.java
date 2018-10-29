@@ -225,7 +225,7 @@ public final class Communicator {
         }
     }
 
-    public void updateWorldFromRank(int rank, World world_to_update, World complete_world) throws IndexOutOfBoundsException, CommunicatorException, MPIException {
+    public void updateWorldFromRank(int rank, World world_to_update, World complete_world, int t) throws IndexOutOfBoundsException, CommunicatorException, MPIException {
 //        Status status = MPI.COMM_WORLD.Recv(this.receive_buffer, 0, buffer_size, MPI.BYTE, rank, 10);
         byte[] bytes = this.receive(rank, 10);
 //        System.out.println(String.format(
@@ -265,7 +265,7 @@ public final class Communicator {
                         firstAgent = currentAgent;
                     }
                     try {
-                        node.getIncomingLink(link_idx).add(currentAgent);
+                        node.getIncomingLink(link_idx).add(currentAgent, t);
                     }
                     catch (NodeException|LinkException e) {
                         throw new CommunicatorException(String.format(
@@ -299,7 +299,7 @@ public final class Communicator {
         }
     }
 
-    public void communicateAgents(World world_to_update, World complete_world) throws InterruptedException, ExceedingBufferException, CommunicatorException, NodeException, MPIException {
+    public void communicateAgents(World world_to_update, World complete_world, int t) throws InterruptedException, ExceedingBufferException, CommunicatorException, NodeException, MPIException {
         List<Request> send_requests = new LinkedList<>();
         int my_rank = this.getMyRank();
         int num_ranks = this.getNumberOfRanks();
@@ -313,7 +313,7 @@ public final class Communicator {
             if (rank == my_rank) {
                 continue;
             }
-            this.updateWorldFromRank(rank, world_to_update, complete_world);
+            this.updateWorldFromRank(rank, world_to_update, complete_world, t);
         }
         this.waitAll(send_requests);
     }

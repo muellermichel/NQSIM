@@ -136,12 +136,13 @@ public final class Link {
         return this.q.peek();
     }
 
-    public void add(Agent agent) throws LinkException {
+    public void add(Agent agent, int t) throws LinkException {
+        agent.link_start_time = t;
         if (this.q.size() < this.free_flow_capacity) {
-            agent.time_to_pass_link = this.free_flow_travel_time;
+            agent.time_to_pass_link = t + this.free_flow_travel_time;
         }
         else if (this.q.size() < this.jam_capacity) {
-            agent.time_to_pass_link = this.jam_travel_time;
+            agent.time_to_pass_link = t + this.jam_travel_time;
         }
         else {
             throw new LinkException("link full");
@@ -158,18 +159,12 @@ public final class Link {
         if (popped != to_be_removed) {
             throw new LinkException("this should not happen: peek is not first waiting on link");
         }
-        popped.current_travel_time = 0;
+        popped.link_start_time = -1;
         return popped;
     }
 
     public int queueLength() {
         return this.q.size();
-    }
-
-    public void tick(int delta_t) {
-        for (Agent agent:this.q) {
-            agent.tick(delta_t);
-        }
     }
 
     public String getId() {

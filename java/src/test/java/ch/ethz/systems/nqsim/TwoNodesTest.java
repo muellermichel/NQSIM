@@ -25,39 +25,39 @@ public final class TwoNodesTest {
 
 //    @Test
     void testSingleAgent() throws NodeException, WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
-        Agent agent = new Agent(new Plan(new byte[0]));
-        this.nodes.get(1).addAgent(agent, (byte) 0);
-        World world = new World(this.nodes);
-        for (int time = 0; time < 9; time++) {
-            world.tick(1);
-        }
-        assert agent.current_travel_time == 9;
-        assert agent.time_to_pass_link == 10;
-        assert this.nodes.get(0).outgoingQueueLength((byte) 0) == 1;
-        world.tick(1);
-        assert agent.current_travel_time == 0;
-        assert this.nodes.get(0).outgoingQueueLength((byte) 0) == 0;
+//        Agent agent = new Agent(new Plan(new byte[0]));
+//        this.nodes.get(1).addAgent(agent, (byte) 0);
+//        World world = new World(this.nodes);
+//        for (int time = 0; time < 9; time++) {
+//            world.tick(1);
+//        }
+//        assert agent.current_travel_time == 9;
+//        assert agent.time_to_pass_link == 10;
+//        assert this.nodes.get(0).outgoingQueueLength((byte) 0) == 1;
+//        world.tick(1);
+//        assert agent.current_travel_time == 0;
+//        assert this.nodes.get(0).outgoingQueueLength((byte) 0) == 0;
     }
 
     void testFullCapacity() throws NodeException, LinkException {
-        for (int time = 0; time < 10; time++) {
-            this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
-        }
-        int queueLength = this.nodes.get(0).outgoingQueueLength((byte)0);
-        assert this.nodes.get(0).getOutgoingLink((byte)0).get(
-                queueLength - 1
-        ).time_to_pass_link == 10;
-        this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
-        int queueLength2 = this.nodes.get(0).outgoingQueueLength((byte)0);
-        int time_to_pass = this.nodes.get(0).getOutgoingLink((byte)0).get(
-                queueLength2 - 1
-        ).time_to_pass_link;
-        assert time_to_pass == 20 : time_to_pass;
-        for (int time = 0; time < 9; time++) {
-            this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
-        }
-        this.nodes.get(0).computeCapacities();
-        this.nodes.get(1).computeCapacities();
-        assert !this.nodes.get(0).getOutgoingLink((byte)0).isAccepting();
+//        for (int time = 0; time < 10; time++) {
+//            this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
+//        }
+//        int queueLength = this.nodes.get(0).outgoingQueueLength((byte)0);
+//        assert this.nodes.get(0).getOutgoingLink((byte)0).get(
+//                queueLength - 1
+//        ).time_to_pass_link == 10;
+//        this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
+//        int queueLength2 = this.nodes.get(0).outgoingQueueLength((byte)0);
+//        int time_to_pass = this.nodes.get(0).getOutgoingLink((byte)0).get(
+//                queueLength2 - 1
+//        ).time_to_pass_link;
+//        assert time_to_pass == 20 : time_to_pass;
+//        for (int time = 0; time < 9; time++) {
+//            this.nodes.get(0).getOutgoingLink((byte)0).add(new Agent(new Plan(new byte[0])));
+//        }
+//        this.nodes.get(0).computeCapacities();
+//        this.nodes.get(1).computeCapacities();
+//        assert !this.nodes.get(0).getOutgoingLink((byte)0).isAccepting();
     }
 }

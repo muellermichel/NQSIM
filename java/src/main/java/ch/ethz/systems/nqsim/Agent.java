@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public final class Agent {
-    public int current_travel_time;
+    public int link_start_time;
     public int time_to_pass_link;
 
     private String id;
@@ -43,28 +43,28 @@ public final class Agent {
     public Agent(
         @JsonProperty("id") String id,
         @JsonProperty("plan") Plan plan,
-        @JsonProperty("current_travel_time") int current_travel_time,
+        @JsonProperty("link_start_time") int link_start_time,
         @JsonProperty("time_to_pass_link") int time_to_pass_link
     ) {
-        this(getNumericId(id), plan, current_travel_time, time_to_pass_link);
+        this(getNumericId(id), plan, link_start_time, time_to_pass_link);
     }
 
-    public Agent(long id, Plan plan, int current_travel_time, int time_to_pass_link) {
+    public Agent(long id, Plan plan, int link_start_time, int time_to_pass_link) {
         this.numeric_id = id;
         if (this.numeric_id >= next_id) {
             next_id = this.numeric_id + 1;
         }
         this.plan = plan;
-        this.current_travel_time = current_travel_time;
+        this.link_start_time = link_start_time;
         this.time_to_pass_link = time_to_pass_link;
     }
 
     public Agent(String id, Plan plan) {
-        this(id, plan, 0, 0);
+        this(id, plan, -1, -1);
     }
 
     public Agent(Plan plan) {
-        this(getAutoId(), plan, 0, 0);
+        this(getAutoId(), plan, -1, -1);
     }
 
     public static Agent fromJson(byte[] jsonData, ObjectReader or) throws IOException {
@@ -75,7 +75,7 @@ public final class Agent {
     public String toString() {
         return "Agent{" +
                 "id=" + this.getId() +
-                ", current_travel_time=" + current_travel_time +
+                ", link_start_time=" + link_start_time +
                 ", time_to_pass_link=" + time_to_pass_link +
                 ", plan=" + this.plan.toString() +
                 '}';
@@ -86,7 +86,7 @@ public final class Agent {
     }
 
     public void serializeToBytes(byte[] bytes, int offset) {
-        Helper.intToByteArray(this.current_travel_time, bytes, offset);
+        Helper.intToByteArray(this.link_start_time, bytes, offset);
         offset += 4;
         Helper.intToByteArray(this.time_to_pass_link, bytes, offset);
         offset += 4;
@@ -100,7 +100,7 @@ public final class Agent {
     }
 
     public static Agent deserializeFromBytes(byte[] bytes, int offset) {
-        int current_travel_time = Helper.intFromByteArray(bytes, offset);
+        int link_start_time = Helper.intFromByteArray(bytes, offset);
         offset += 4;
         int time_to_pass_link = Helper.intFromByteArray(bytes, offset);
         offset += 4;
@@ -109,15 +109,11 @@ public final class Agent {
         String agent_id = new String(bytes, offset, num_id_bytes);
         offset += num_id_bytes;
         Plan plan = Plan.deserializeFromBytes(bytes, offset);
-        return new Agent(agent_id, plan, current_travel_time, time_to_pass_link);
+        return new Agent(agent_id, plan, link_start_time, time_to_pass_link);
     }
 
     public int byteLength() {
         return 12 + this.getIdBytes().length + this.plan.byteLength();
-    }
-
-    public void tick(int delta_t) {
-        current_travel_time += delta_t;
     }
 
     public byte peekPlan() {
