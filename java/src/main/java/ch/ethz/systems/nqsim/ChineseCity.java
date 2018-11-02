@@ -273,23 +273,24 @@ public final class ChineseCity {
     }
 
     public void run() throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException, IOException {
+        int sim_runtime = 3600;
+
         EventLog.clear();
         long start = System.currentTimeMillis();
-        for (int time=0; time < 600; time += 1) {
+        for (int time=0; time < sim_runtime; time += 1) {
             this.world.tick(1, this.complete_world);
         }
         long time = System.currentTimeMillis() - start;
-        this.world.communicator.communicateEventLog();
-        if (this.world.communicator.getMyRank() == 0) {
-            EventLog.print_all();
-//            System.out.println(EventLog.toJson());
-        }
+//        this.world.communicator.communicateEventLog();
+//        if (this.world.communicator.getMyRank() == 0) {
+//            EventLog.print_all();
+////            System.out.println(EventLog.toJson());
+//        }
         System.out.println(String.format("rank %d: world finished with %d agents, %d routed, %6.4f%% nodes occupied avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),
             World.sumOverAllNodes(world, Node::getRouted),
-            World.sumIfOverAllNodes(world, node -> !node.isInactive()) / (double) this.world.getNodes().size() * 100,
-            600 / (time / (double) 1000)
+            World.sumIfOverAllNodes(world, node -> !node.isInactive()) / (double) this.world.getNodes().size() * 100, sim_runtime / (time / (double) 1000)
         ));
 //        ListIterator<Node> node_iterator = complete_world.getNodes().listIterator();
 //        while (node_iterator.hasNext()) {

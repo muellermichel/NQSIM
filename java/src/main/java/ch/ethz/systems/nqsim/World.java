@@ -14,6 +14,7 @@ public final class World {
     private Node[] active_nodes;
     private  Map<String,Node> next_node_by_link_id;
     public Communicator communicator;
+    private long start = -1, time = -1, node_update_time = -1, compcap_time = -1, route_time = -1, capcom_time = -1, agentcom_time = -1;
 
     public static void compareAllLinks(World world, World reference_world, LinkComparator operator) {
         ListIterator<Node> node_iterator = world.getNodes().listIterator();
@@ -125,7 +126,7 @@ public final class World {
         });
         Random randomGenerator = new Random(1);
         for (int idx = 0; idx < numOfAgents; idx++) {
-            int plan_length = randomGenerator.nextInt(40) + 20;
+            int plan_length = randomGenerator.nextInt(50) + 200;
             int start_node_idx = randomGenerator.nextInt(this.nodes.size());
             Node current_node = this.nodes.get(start_node_idx);
             Node start_node = current_node;
@@ -153,12 +154,22 @@ public final class World {
     }
 
     public void tick(int delta_t, World complete_world) throws WorldException, InterruptedException, ExceedingBufferException, CommunicatorException, MPIException {
-        long time, node_update_time, compcap_time, route_time, capcom_time, agentcom_time;
+        int print_time = 60;
+        long start_compcap, start_node_update, start_capcom, start_route, start_agentcom;
+        if (this.t % print_time == 0) {
+            time = 0;
+            node_update_time = 0;
+            compcap_time = 0;
+            route_time = 0;
+            capcom_time = 0;
+            agentcom_time = 0;
+        }
         try {
             EventLog.setTime(t);
-            long start = System.currentTimeMillis();
-
-            long start_compcap = System.currentTimeMillis();
+            if (this.t % print_time == 0) {
+                start = System.currentTimeMillis();
+            }
+            start_compcap = System.currentTimeMillis();
             int active_node_idx = 0;
             for (Node node : this.nodes) {
                 node.computeCapacities();
@@ -171,26 +182,24 @@ public final class World {
             for (int idx = active_node_idx; idx < this.active_nodes.length; idx++) {
                 this.active_nodes[idx] = null;
             }
-            compcap_time = System.currentTimeMillis() - start_compcap;
-
-            long start_node_update = System.currentTimeMillis();
+            compcap_time += System.currentTimeMillis() - start_compcap;
+            start_node_update = System.currentTimeMillis();
 //            for (Node node : this.active_nodes) {
 //                if (node == null) {
 //                    break;
 //                }
 //                node.tick(delta_t);
 //            }
-            node_update_time = System.currentTimeMillis() - start_node_update;
+            node_update_time += System.currentTimeMillis() - start_node_update;
 
-            long start_capcom = System.currentTimeMillis();
+            start_capcom = System.currentTimeMillis();
             if (this.communicator != null) {
                 this.communicator.communicateCapacities(this);
             }
-            capcom_time = System.currentTimeMillis() - start_capcom;
+            capcom_time += System.currentTimeMillis() - start_capcom;
 
             this.t += 1;
-
-            long start_route = System.currentTimeMillis();
+            start_route = System.currentTimeMillis();
             for (Node node:this.active_nodes) {
                 if (node == null) {
                     break;
@@ -201,18 +210,20 @@ public final class World {
                     throw new WorldException(e.getMessage());
                 }
             }
-            route_time = System.currentTimeMillis() - start_route;
+            route_time += System.currentTimeMillis() - start_route;
 
-            long start_agentcom = System.currentTimeMillis();
+            start_agentcom = System.currentTimeMillis();
             if (this.communicator != null) {
                 this.communicator.communicateAgents(this, complete_world, this.t);
             }
-            agentcom_time = System.currentTimeMillis() - start_agentcom;
+            agentcom_time += System.currentTimeMillis() - start_agentcom;
 
             for (Node node : this.nodes) {
                 node.finalizeTimestep();
             }
-            time = System.currentTimeMillis() - start;
+            if ((this.t + 1) % print_time == 1) {
+                time = System.currentTimeMillis() - start;
+            }
         }
         catch (NodeException | LinkException e) {
             e.printStackTrace();
@@ -222,13 +233,13 @@ public final class World {
                 e.getMessage()
             ));
         }
-        if (this.communicator.getMyRank() == 0) {
+        if (this.communicator.getMyRank() == 0 && (this.t + 1) % print_time == 1) {
             System.out.println(String.format(
                 "time=%ds,real for %ds:%6.4fs,s/r:%6.4f; n.up: %6.4f, compcap: %6.4f, capcom: %6.4f, route: %6.4f, agentcom: %6.4f",
                 this.t,
-                delta_t,
+                delta_t * print_time,
                 time / (double) 1000,
-                delta_t / (time / (double) 1000),
+                delta_t * print_time / (time / (double) 1000),
                 node_update_time / (double) time,
                 compcap_time / (double) time,
                 capcom_time / (double) time,
