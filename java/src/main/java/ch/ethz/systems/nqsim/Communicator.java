@@ -8,8 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import mpi.*;
 
 public final class Communicator {
-    private static int buffer_size = 100000000;
-//    private static int buffer_size = 100;
+    private static int buffer_size = 400000000; //400MB buffers
     private Map<Integer, Map<Integer, Map<Byte, List<Agent>>>> sending_agents_by_link_idx_by_node_idx_by_rank;
     private ByteBuffer receive_buffer;
     private ByteBuffer send_buffer;
