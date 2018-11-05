@@ -27,5 +27,5 @@ Supported number of processes: The current version is tested to work with 1, 2, 
     
 Performance
 -----------
-    With 3 million agents on 25 processes running on 4x Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz I'm currently getting ~590 simulated seconds per second.
+With 3 million agents on 25 processes running on 4x Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz I'm currently getting ~590 simulated seconds per second.
     
