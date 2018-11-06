@@ -60,7 +60,7 @@
             <version>2.0.0</version>
             <scope>system</scope>
             <systemPath>
-                ${env.MPI_JAR_PATH}
+                /usr/local/lib/mpi.jar
             </systemPath>
         </dependency>
     </dependencies>
@@ -77,7 +77,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.0</version>
+		    <version>2.22.0</version>
+		    <configuration>
+		        <useSystemClassLoader>false</useSystemClassLoader>
+		    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
