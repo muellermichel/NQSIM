@@ -6,11 +6,11 @@ public class SquareWorld extends World {
 
     // The world is a mesh of squares. Each edge is a link.
     public SquareWorld(int edgeSize, int numAgens, int linkCapcity, int numSteps) {
-        super(new Link[edgeSize * edgeSize * 4], new Agent[numAgens]);
+        super(new Link[edgeSize * edgeSize * 4], new Agent[numAgens], new Link[0], 2);
         Random rand = new Random();
         // Create links.
         for (int i = 0; i < links.length; i++) {
-           links[i] = new Link(i, linkCapcity);
+           links[i] = new Link(i, linkCapcity, false); // TODO - detect if links are internal or not!
         }
         // Create agents.
          for (int i = 0; i < agents.length; i++) {

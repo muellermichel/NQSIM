@@ -18,18 +18,21 @@ public class Link {
     protected int jam_time; // TODO - check default values.
     // Basically queue.capacity - queue.size
     protected int currentCapacity;
+    // If a node is internal. Boundary/external nodes are processed seperately.
+    protected boolean internal;
 
-    public Link(int id, int capacity) {
+    public Link(int id, int capacity, boolean internal) {
         this.id = id;
         this.queue = new ArrayDeque<>(capacity);
         this.free_capacity = new Float(capacity * 0.8f).intValue();
-        this.free_time = 30;
-        this.jam_time = 60;
+        this.free_time = 60;
+        this.jam_time = 120;
         this.currentCapacity = capacity;
+        this.internal = internal;
     }
 
     protected int timeToPass() {
-        return currentCapacity < free_capacity ? free_time : jam_time;
+        return currentCapacity > free_capacity ? free_time : jam_time;
     }
 
     public boolean push(Agent agent) {

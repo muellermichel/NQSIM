@@ -8,8 +8,8 @@ jvm_opts="$jvm_opts -XX:-TieredCompilation"
 jvm_opts="$jvm_opts -XX:+AggressiveOpts"
 jvm_opts="$jvm_opts -XX:-UseBiasedLocking"
 
-#jvm_opts="$jvm_opts -Xmx10g"
-#jvm_opts="$jvm_opts -Xms10g"
+jvm_opts="$jvm_opts -Xmx10g"
+jvm_opts="$jvm_opts -Xms10g"
 #jvm_opts="$jvm_opts -XX:MaxNewSize=128m"
 #jvm_opts="$jvm_opts -XX:NewSize=128m"
 
