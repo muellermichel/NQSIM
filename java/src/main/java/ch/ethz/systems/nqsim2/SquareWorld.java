@@ -5,8 +5,15 @@ import java.util.Random;
 public class SquareWorld extends World {
 
     // The world is a mesh of squares. Each edge is a link.
-    public SquareWorld(int edgeSize, int numAgens, int linkCapcity, int numSteps) {
-        super(new Link[edgeSize * edgeSize * 4], new Agent[numAgens], new Link[0], 2);
+    public SquareWorld(
+        int edgeSize, 
+        int numAgens, 
+        int linkCapcity, 
+        int numSteps,
+        int numRealms) {
+        super(new Realm[numRealms]);
+        Link[] links = new Link[edgeSize * edgeSize * 4];
+        Agent[] agents = new Agent[numAgens];
         Random rand = new Random();
         // Create links.
         for (int i = 0; i < links.length; i++) {
@@ -41,5 +48,7 @@ public class SquareWorld extends World {
            links[i].nextTime = links[i].queue.peek() == null ? 
                 0 : links[i].queue.peek().linkFinishTime;
         }
+        // TODO - split links by reams
+        // TODO - identify which links cross reals.
     }
 }

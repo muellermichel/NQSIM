@@ -4,7 +4,7 @@ public class WorldSimulator {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Populating world");
-        World world = new SquareWorld(512, 10000000, 512, 3600/60);
+        World world = new SquareWorld(512, 10000000, 512, 3600/60, 1);
         System.out.println("Populating world finished");
         System.out.println("Running world");
         for (int i = 0; i < 3600/60; i++) {
