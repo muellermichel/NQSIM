@@ -37,17 +37,15 @@ public abstract class WorldGenerator {
         }
     }
 
-    // Adjacency list graph.
+    // Graph and plan prepared by a specific scenario.
     protected ArrayList<Vertex> vertexes;
     protected ArrayList<Edge> edges;
-    // Array of plans. 
     protected ArrayList<ArrayList<Edge>> plans;
-    // Translation from global Link ids to partition/realm.
-    // linkGlobalToPartition[<global Link id>] -> partition/realm id.
-    private ArrayList<Integer> linkGlobalToPartition;
-    // Translation from global Link id to partition/realm internal id.
-    // linkGlobalToLocal[<global Link id>] -> local Link id.
-    private ArrayList<Integer> linkGlobalToLocal;
+
+    // Translation from edge ids to containing realm id.
+    private ArrayList<Integer> edgeId2RealmId;
+    // Translation from edge id to link id (internal to realm).
+    private ArrayList<Integer> edgeId2LinkId;
     // Array of realms (indexed by realm id).
     private ArrayList<Realm> realms;
     // Array of agents (indexed by agent id).
@@ -80,7 +78,7 @@ public abstract class WorldGenerator {
         ArrayList<ArrayList<Link>> localLinks = new ArrayList<>(numRealms);
         ArrayList<ArrayList<Link>> localInLinks = new ArrayList<>(numRealms);
         ArrayList<ArrayList<Link>> localOutLinks = new ArrayList<>(numRealms);
-        linkGlobalToLocal = new ArrayList<>(edges.size());
+        edgeId2LinkId = new ArrayList<>(edges.size());
 
         // Initialize data structures for each Realm.
         for (int i = 0; i < numRealms; i++) {
@@ -96,10 +94,10 @@ public abstract class WorldGenerator {
             ArrayList<Edge> nextEdges = vertexes.get(edge.dstVertex).edges;
 
             // The origin Realm (owner Realm).
-            int fromRealm = linkGlobalToPartition.get(i);
+            int fromRealm = edgeId2RealmId.get(i);
             
             // The destination Realm.
-            int toRealm = linkGlobalToPartition.get(nextEdges.get(0).id);
+            int toRealm = edgeId2RealmId.get(nextEdges.get(0).id);
             
             // Id of the Link inside the Realm.
             int id = localCounters.get(fromRealm);
@@ -110,7 +108,7 @@ public abstract class WorldGenerator {
             Link link = new Link(id, fromRealm, toRealm, capacity);
 
             // Saving the convertion between a global id and a local id.
-            linkGlobalToLocal.add(i, id);
+            edgeId2LinkId.add(i, id);
 
             // Add Link to Realm
             localLinks.get(fromRealm).add(link);
@@ -141,20 +139,19 @@ public abstract class WorldGenerator {
 
     private ArrayList<Agent> setupAgents() {
         ArrayList<Agent> agents = new ArrayList<>(plans.size());
-        // Convert plan, from global Link id to Realm-specific ids.
+        // Convert plan, from edge id to link ids.
         for (int i = 0; i < plans.size(); i++) {
             int[] plan = new int[plans.get(i).size()];
             for (int j = 0; j < plans.get(i).size(); j++) {
-                plan[j] = linkGlobalToLocal.get(plans.get(i).get(j).id);
+                plan[j] = edgeId2LinkId.get(plans.get(i).get(j).id);
             }
 
-
             // Install agent in the initial Link.
-            int realmid = linkGlobalToPartition.get(plans.get(i).get(0).id);
-            int linkid = plan[0];
+            int realmid = edgeId2RealmId.get(plans.get(i).get(0).id);
+            int linkid = edgeId2LinkId.get(plans.get(i).get(0).id);
             Link link = realms.get(realmid).links()[linkid];
-            Agent a = new Agent(i, link, plan);
-            link.push(a);
+            Agent a = new Agent(i, plan);
+            link.push(0, a);
 
             // Add Agent to list of Agents. 
             agents.add(i, a);
@@ -165,7 +162,7 @@ public abstract class WorldGenerator {
     public World generateWorld(int numRealms) {
         setupGraph();
         setupPlans();
-        linkGlobalToPartition = setupPartitions(numRealms);
+        edgeId2RealmId = setupPartitions(numRealms);
         realms = setupRealms(numRealms);
         agents = setupAgents();
         return new World(

@@ -29,8 +29,8 @@ public class Link {
         this.toRealm = toRealm;
         this.queue = new ArrayDeque<>(capacity);
         this.free_capacity = new Float(capacity * 0.8f).intValue();
-        this.free_time = 60;
-        this.jam_time = 120;
+        this.free_time = 30;
+        this.jam_time = 60;
         this.currentCapacity = capacity;
     }
 
@@ -38,10 +38,12 @@ public class Link {
         return currentCapacity > free_capacity ? free_time : jam_time;
     }
 
-    public boolean push(Agent agent) {
+    public boolean push(int time, Agent agent) {
         if (currentCapacity > 0) { 
             queue.add(agent);
             currentCapacity--;
+            agent.linkFinishTime = time + agent.timeToPass + timeToPass();
+            nextTime = queue.peek().linkFinishTime;
             return true;
         } else {
             return false;

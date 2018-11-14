@@ -12,16 +12,10 @@ public class Agent {
     // Current position in plan.
     protected int planIndex;
 
-    public Agent(int id, Link start, int[] plan) {
+    public Agent(int id, int[] plan) {
         this.id = id;
         this.timeToPass = 1; // TODO - check default values.
         this.plan = plan;
-        this.linkFinishTime = this.timeToPass + start.timeToPass();
-    }
-
-    public void insert(int time, Link nextHop) {
-        planIndex++;
-        linkFinishTime = time + this.timeToPass + nextHop.timeToPass();
     }
 
     public int id() {

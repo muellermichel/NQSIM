@@ -26,9 +26,8 @@ public class Realm {
             Agent agent = link.queue().peek();
             while (agent.linkFinishTime <= time) {
                 Link nextHop = links[agent.plan[agent.planIndex]];
-                if (nextHop.push(agent)) {
-                    // TODO - need to update nextHop.nextTime
-                    agent.insert(time, nextHop);
+                if (nextHop.push(time, agent)) {
+                    agent.planIndex++;
                     link.pop();
                     routed++;
                     if ((agent = link.queue().peek()) == null) {
