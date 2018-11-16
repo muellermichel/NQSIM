@@ -1,6 +1,9 @@
 package ch.ethz.systems.nqsim2;
 
-public class Agent {
+import java.io.Serializable;
+
+public class Agent implements Serializable {
+    private static final long serialVersionUID = -6805724658054818824L;
     // Id of the link (index for World.agents).
     protected final int id;
     // Timestamp of when the agent will be ready to exit link.
@@ -32,6 +35,10 @@ public class Agent {
 
     public int planIndex() {
         return this.planIndex;
+    }
+
+    public void planIndex(int index) {
+        this.planIndex = index;
     }
 
     public int[] plan() {

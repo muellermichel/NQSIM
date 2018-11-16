@@ -34,6 +34,7 @@ public class SquareWorldGenerator extends WorldGenerator {
                 edges.add(e.id, e);
             }
         }
+        System.out.println(edges);
     }
 
     public void setupVertexes() {
@@ -53,7 +54,7 @@ public class SquareWorldGenerator extends WorldGenerator {
             outgoing.add(3, right);
             vertexes.add(i, new Vertex(i, outgoing));
         }
-
+        System.out.println(vertexes);
     }
 
     @Override
@@ -96,6 +97,26 @@ public class SquareWorldGenerator extends WorldGenerator {
                 plan.add(j, nextEdge);
             }
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        String worldpath = args[0];
+        int realms = Integer.parseInt(args[1]);
+        int agents = Integer.parseInt(args[2]);
+        int planSize = Integer.parseInt(args[3]);
+        int edgeSize = Integer.parseInt(args[4]);
+
+        System.out.println("Populating " + worldpath);
+        World world = new SquareWorldGenerator(edgeSize, agents, planSize).generateWorld(realms);
+        System.out.println("Populating world finished");
+        
+        System.out.println("Dumping world to " + worldpath);
+        WorldDumper.dumpWorld(worldpath, world);
+        System.out.println("Finished dumping world.");
+
+        System.out.println("Serializing world to " + worldpath + ".ser");
+        World.serialize(world, worldpath + ".ser");
+        System.out.println("Finished serializing world.");
     }
 
 }

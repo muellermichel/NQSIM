@@ -1,75 +1,73 @@
 package ch.ethz.systems.nqsim2;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
+
 public class WorldDumper {
 
-    private static final int edgeSize = 2;
-    private static final int numAgents = 10;
-    private static final int numSteps = 2;
-    private static final int numRealms = 2;
-
-    public static void main(String[] args) {
-        System.out.println("Populating world");
-        World world = new SquareWorldGenerator(edgeSize, numAgents, numSteps).generateWorld(numRealms);
-        System.out.println("Populating world finished");
-        dumpWorld(world);
-    }
-
-    private static void dumpWorld(World world) {
-        System.out.println("<world> time=" + world.time());
+    public static void dumpWorld(String worldpath, World world) throws Exception {
         for (Realm realm : world.realms()) {
-            dumpRealm(realm);
+            dumpRealm(worldpath, realm);
         }
         for (Agent agent : world.agents()) {
-            dumpAgent(agent);
+            dumpAgent(worldpath, agent);
         }
-        System.out.println("</world>");
     }
 
-    private static void dumpRealm(Realm realm) {
-        System.out.println(String.format("\t<realm> time=%d id=%d",
+    public static void dumpRealm(String worldpath, Realm realm) throws Exception {
+        String filepath = String.format("%s-realm-%d.xml", worldpath, realm.id());
+        PrintWriter writer = new PrintWriter(new FileWriter(filepath));
+        writer.println(String.format("<realm time=%d id=%d>",
             realm.time(), realm.id()));
-        System.out.println("\t\t<links>");
-        for (Link link : realm.links()) {
-            dumpLink(link);
+        writer.println("\t<links>");
+        for (int i = 0; i < realm.links().length; i++) {
+            dumpInternalLink(writer, i, realm.links()[i]);
         }
-        System.out.println("\t\t</links>");
-        System.out.println("\t\t<inlinks>");
-        for (Link link : realm.inLinks()) {
-            System.out.println(String.format("\t\t\t<link> id=%d from=%d to=%d",
-               link.id(), link.fromrealm(), link.torealm()));
+        writer.println("\t</links>");
+        writer.println("\t<inlinks>");
+        for (LinkBoundary link : realm.inLinks()) {
+            dumpBoundaryLink(writer, link);
         }
-        System.out.println("\t\t</inlinks>");
-        System.out.println("\t\t<outlinks>");
-        for (Link link : realm.outLinks()) {
-            System.out.println(String.format("\t\t\t<link> id=%d from=%d to=%d",
-                link.id(), link.fromrealm(), link.torealm()));
+        writer.println("\t</inlinks>");
+        writer.println("\t<outlinks>");
+        for (LinkBoundary link : realm.outLinks()) {
+            dumpBoundaryLink(writer, link);
         }
-        System.out.println("\t\t</outlinks>");
-        System.out.println("\t</realm>");
+        writer.println("\t</outlinks>");
+        writer.println("</realm>");
+        writer.close();
     }
 
-    private static void dumpAgent(Agent agent) {
-        System.out.println(String.format("\t<agent> id=%d linkFinishTime=%d timeToPass=%d planIndex=%d",
+    public static void dumpInternalLink(PrintWriter writer, int id, LinkInternal link) {
+        writer.println(String.format("\t\t<ilink id=%d nextTime=%d free_capacity=%d free_time=%d jam_time=%d currentCapacity=%d>",
+            id, link.nexttime(), link.freeCapacity(), link.freeTime(), link.jamTime(), 
+            link.currentCapacity()));
+        writer.print("\t\t\t<agents>");
+        for (Agent a : link.queue()) {
+            writer.print(String.format("%d ", a.id()));   
+        }
+        writer.println("</agents>");
+        writer.println("\t\t</ilink>");
+    }
+
+    public static void dumpBoundaryLink(PrintWriter writer, LinkBoundary link) {
+        writer.println(String.format("\t\t<blink id=%d from=%d to=%d>",
+               link.id(), link.fromrealm(), link.torealm()));
+
+    }
+    
+    public static void dumpAgent(String worldpath, Agent agent) throws Exception {
+        String filepath = String.format("%s-agents.xml", worldpath);
+        PrintWriter writer = new PrintWriter(new FileWriter(filepath));
+        writer.println(String.format("\t<agent id=%d linkFinishTime=%d timeToPass=%d planIndex=%d>",
             agent.id(), agent.linkFinishTime(), agent.timeToPass(), 
             agent.planIndex()));
-        System.out.print("\t\t<plan>");
+        writer.print("\t<plan>");
         for (int edge : agent.plan()) {
-            System.out.print(String.format(" %d ", edge));   
+            writer.print(String.format("%d ", edge));   
         }
-        System.out.println("</plan>");
-        System.out.println("\t</agent>");
-    }
-
-    public static void dumpLink(Link link) {
-        System.out.println(String.format("\t\t\t<link> id=%d from=%d to=%d nextTime=%d free_capacity=%d free_time=%d jam_time=%d currentCapacity=%d",
-            link.id(), link.fromrealm(), link.torealm(), link.nexttime(), 
-            link.freeCapacity(), link.freeTime(), link.jamTime(), 
-            link.currentCapacity()));
-        System.out.print("\t\t\t\t<agents>");
-        for (Agent a : link.queue()) {
-            System.out.print(String.format(" %d ", a.id()));   
-        }
-        System.out.println("</agents>");
-        System.out.println("\t\t\t</link>");
+        writer.println("</plan>");
+        writer.println("</agent>");
+        writer.close();
     }
 }

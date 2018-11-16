@@ -1,15 +1,11 @@
 package ch.ethz.systems.nqsim2;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public class Link {
-    // Id of the Link inside the owner realm (from realm).
-    private final int id;
-    // Source real id.
-    private final int fromRealm;
-    // Destination real id.
-    private final int toRealm;
+public class LinkInternal implements Serializable {
+    private static final long serialVersionUID = 221067454362884616L;
     // Timestamp of the next agent to arrive.
     private int nextTime;
     // Queue of agents on this link.
@@ -23,14 +19,11 @@ public class Link {
     // Basically queue.capacity - queue.size
     private int currentCapacity;
 
-    public Link(int id, int fromRealm, int toRealm, int capacity) {
-        this.id = id;
-        this.fromRealm = fromRealm;
-        this.toRealm = toRealm;
+    public LinkInternal(int capacity) {
         this.queue = new ArrayDeque<>(capacity);
         this.free_capacity = new Float(capacity * 0.8f).intValue();
-        this.free_time = 30;
-        this.jam_time = 60;
+        this.free_time = 1;
+        this.jam_time = 2;
         this.currentCapacity = capacity;
     }
 
@@ -53,18 +46,6 @@ public class Link {
     public void pop() {
         queue.poll();
         currentCapacity++;
-    }
-
-    public int id() {
-        return this.id;
-    }
-
-    public int torealm() {
-        return this.toRealm;
-    }
-
-    public int fromrealm() {
-        return this.fromRealm;
     }
 
     public int nexttime () {

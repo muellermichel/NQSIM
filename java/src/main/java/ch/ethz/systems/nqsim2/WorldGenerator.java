@@ -72,12 +72,12 @@ public abstract class WorldGenerator {
         return link2realm;
     }
 
-    private ArrayList<Realm> setupRealms(int numRealms) {
+    private ArrayList<Realm> setupRealms(int numRealms) throws Exception {
         ArrayList<Realm> realms = new ArrayList<>(numRealms);
         ArrayList<Integer> localCounters = new ArrayList<>(numRealms);
-        ArrayList<ArrayList<Link>> localLinks = new ArrayList<>(numRealms);
-        ArrayList<ArrayList<Link>> localInLinks = new ArrayList<>(numRealms);
-        ArrayList<ArrayList<Link>> localOutLinks = new ArrayList<>(numRealms);
+        ArrayList<ArrayList<LinkInternal>> localLinks = new ArrayList<>(numRealms);
+        ArrayList<ArrayList<LinkBoundary>> localInLinks = new ArrayList<>(numRealms);
+        ArrayList<ArrayList<LinkBoundary>> localOutLinks = new ArrayList<>(numRealms);
         edgeId2LinkId = new ArrayList<>(edges.size());
 
         // Initialize data structures for each Realm.
@@ -105,7 +105,7 @@ public abstract class WorldGenerator {
             // Number of slots in the Link.
             int capacity = 512; // TODO - get real number for this.
 
-            Link link = new Link(id, fromRealm, toRealm, capacity);
+            LinkInternal link = new LinkInternal(capacity);
 
             // Saving the convertion between a global id and a local id.
             edgeId2LinkId.add(i, id);
@@ -115,8 +115,9 @@ public abstract class WorldGenerator {
 
             // If Link leads to a diff Realm, add it to data structures.
             if (fromRealm != toRealm) {
-                localOutLinks.get(fromRealm).add(link);
-                localInLinks.get(toRealm).add(link);
+                LinkBoundary blink = new LinkBoundary(id, fromRealm, toRealm);
+                localOutLinks.get(fromRealm).add(blink);
+                localInLinks.get(toRealm).add(blink);
             }
 
             // Update counter.
@@ -129,9 +130,9 @@ public abstract class WorldGenerator {
                 i,
                 new Realm(
                     i,
-                    localLinks.get(i).toArray(new Link[localLinks.size()]), 
-                    localInLinks.get(i).toArray(new Link[localInLinks.size()]), 
-                    localOutLinks.get(i).toArray(new Link[localOutLinks.size()])));
+                    localLinks.get(i).toArray(new LinkInternal[localLinks.get(i).size()]), 
+                    localInLinks.get(i).toArray(new LinkBoundary[localInLinks.get(i).size()]), 
+                    localOutLinks.get(i).toArray(new LinkBoundary[localOutLinks.get(i).size()])));
         }
 
         return realms;
@@ -149,7 +150,7 @@ public abstract class WorldGenerator {
             // Install agent in the initial Link.
             int realmid = edgeId2RealmId.get(plans.get(i).get(0).id);
             int linkid = edgeId2LinkId.get(plans.get(i).get(0).id);
-            Link link = realms.get(realmid).links()[linkid];
+            LinkInternal link = realms.get(realmid).links()[linkid];
             Agent a = new Agent(i, plan);
             link.push(0, a);
 
@@ -159,12 +160,14 @@ public abstract class WorldGenerator {
         return agents;
     }
 
-    public World generateWorld(int numRealms) {
+    public World generateWorld(int numRealms) throws Exception {
         setupGraph();
         setupPlans();
         edgeId2RealmId = setupPartitions(numRealms);
         realms = setupRealms(numRealms);
         agents = setupAgents();
+        System.out.println(edgeId2RealmId);
+        System.out.println(edgeId2LinkId);
         return new World(
             realms.toArray(new Realm[realms.size()]), 
             agents.toArray(new Agent[agents.size()]));
