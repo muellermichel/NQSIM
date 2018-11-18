@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import mpi.MPI;
+import mpi.Status;
 
 public class Communicator {
 
@@ -47,9 +48,10 @@ public class Communicator {
 
     public void recvBuffers() throws Exception {
         for (Map.Entry<Integer, ByteBuffer> entry : bufsByRealmId.entrySet()) {
-            MPI.COMM_WORLD.recv(
+            Status status = MPI.COMM_WORLD.recv(
                 entry.getValue(), entry.getValue().capacity(), 
                 MPI.BYTE, entry.getKey(), realm.time());
+            entry.getValue().limit(status.getCount(MPI.BYTE));
         }
     }
 
@@ -91,7 +93,7 @@ public class Communicator {
                 for (int j = 0; j < nagents; j++) {
                     int agentid = bb.getInt();
                     int planindex = bb.getInt();
-                    agents[agentid].planIndex(planindex);
+                    agents[agentid].planIndex(planindex); // TODO - should we do this here?
                     recvAgents.add(agents[agentid]);
                 }
                 inAgentsByLinkId.put(linkid, recvAgents);

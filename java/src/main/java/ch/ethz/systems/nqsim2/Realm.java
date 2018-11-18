@@ -3,29 +3,55 @@ package ch.ethz.systems.nqsim2;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class Realm implements Serializable {
 
     private static final long serialVersionUID = -4933703718837514089L;
     // Identifier of the realm.
     private final int id;
-    // Array of links in this realm. This also includes outgoing links.
+    // Array of links onwer by this realm. 
+    // Note 1: that outgoing are onwer by the source realm. 
+    // Note 2: the id of the link is its index in the array.
     private final LinkInternal[] links;
-    // Array of incomming links.
+    // Array of internal links onwer by this realm. Does not include outgoing
+    // links owned by this realm.
+    private final LinkInternal[] internalLinks;
+    // A LinkBoundary is either an incomming or outgoing link. Each boundary
+    // link contains the id of the link in the source realm. These are used to
+    // regulate the communication between realms.
     private final LinkBoundary[] inLinks;
-    // Array of outgoing links.
     private final LinkBoundary[] outLinks;
     // Current timestamp
     private int time;
 
-    public Realm(
-            int id, LinkInternal[] links, LinkBoundary[] inLinks, 
+    public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks, 
             LinkBoundary[] outLinks) throws Exception {
         this.id = id;
         this.links = links;
         this.inLinks = inLinks;
         this.outLinks = outLinks;
+        this.internalLinks = setupInternalLinks();
+    }
+
+    private LinkInternal[] setupInternalLinks() {
+        Set<Integer> outLinkIds = new HashSet<>(outLinks.length);
+        LinkInternal[] internalLinks = new LinkInternal[links.length - outLinks.length];
+        int idx = 0;
+
+        for (LinkBoundary lb: outLinks) {
+            outLinkIds.add(lb.id());
+        }
+
+        for (int i = 0; i < links.length; i++) {
+            if (!outLinkIds.contains(i)) {
+                internalLinks[idx++] = links[i];
+            }
+        }
+
+        return internalLinks;
     }
 
     protected boolean processAgent(Agent agent) {
@@ -68,8 +94,7 @@ public class Realm implements Serializable {
         time += delta;
 
         // Process internal links.
-        for (LinkInternal link : links) {
-            // TODO - we should not process outgoing links!
+        for (LinkInternal link : internalLinks) {
             routed += processLink(link);
         }
 
@@ -78,11 +103,9 @@ public class Realm implements Serializable {
             LinkInternal ilink = links[blink.id()];
             ArrayList<Agent> outgoing = new ArrayList<>();
             for (Agent agent : ilink.queue()) {
-                System.out.println(String.format("#####Outgoing time %d agent %d finishtime %d", time, agent.id, agent.linkFinishTime));
                 if (agent.linkFinishTime > time) {
                     break;
                 } else {
-                    System.out.println("#####Adding agent " + agent.id);
                     outgoing.add(agent);
                 }
             }

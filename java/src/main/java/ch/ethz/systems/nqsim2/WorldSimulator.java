@@ -12,6 +12,8 @@ public class WorldSimulator {
         String worldpath = args[0];
         int timestep = Integer.parseInt(args[1]);
         int numsteps = Integer.parseInt(args[2]);
+        // TODO - always dump only the last iteration
+        // TODO - use multiple log files, one for each process.
 
         Communicator comm;
         Realm realm;
