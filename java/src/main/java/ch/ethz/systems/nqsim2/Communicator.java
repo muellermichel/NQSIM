@@ -20,6 +20,7 @@ public class Communicator {
     private final int bufferCapacity = 256*1024*1024;
 
     public Communicator(Realm realm, Agent[] agents) throws Exception {
+        MPI.COMM_WORLD.setErrhandler(MPI.ERRORS_ARE_FATAL);
         this.bufsByRealmId = new HashMap<>();
         this.realm = realm;
         this.agents = agents;
@@ -38,24 +39,38 @@ public class Communicator {
         }
     }
 
-    private void sendBuffers() throws Exception {
+    private void sendBuffers(int tag) throws Exception {
         for (Map.Entry<Integer, ByteBuffer> entry : bufsByRealmId.entrySet()) {
-            MPI.COMM_WORLD.iSend(
+            System.out.println(
+                String.format(
+                    "sendBuffers from %d to %d, %d bytes, %d time", 
+                    realm.id(), entry.getKey(), entry.getValue().position(), tag));
+            MPI.COMM_WORLD.send(
                 entry.getValue(), entry.getValue().position(), 
-                MPI.BYTE, entry.getKey(), realm.time());
+                MPI.BYTE, entry.getKey(), tag);
         }
+        String.format(
+                    "sendBuffers from %d, %d time...done!", realm.id(), tag);
     }
 
-    public void recvBuffers() throws Exception {
+    public void recvBuffers(int tag) throws Exception {
+        System.out.println("recvBuffers");
         for (Map.Entry<Integer, ByteBuffer> entry : bufsByRealmId.entrySet()) {
+            System.out.println(
+                String.format(
+                    "recvBuffers from %d to %d, %d time", 
+                    entry.getKey(), realm.id(), tag));
             Status status = MPI.COMM_WORLD.recv(
                 entry.getValue(), entry.getValue().capacity(), 
-                MPI.BYTE, entry.getKey(), realm.time());
+                MPI.BYTE, entry.getKey(), tag);
             entry.getValue().limit(status.getCount(MPI.BYTE));
         }
+        System.out.println(
+                String.format(
+                    "recvBuffers to %d, %d time...done!", realm.id(), tag));
     }
 
-    public void clearBuffers() {
+    public void clearBuffers() throws Exception {
         for (ByteBuffer bb : bufsByRealmId.values()) {
             bb.clear();
         }
@@ -78,12 +93,12 @@ public class Communicator {
                 bb.putInt(a.planIndex);
             }
         }
-        sendBuffers();
+        sendBuffers(realm.time()+1); // TODO - hack!!
     }
 
     public Map<Integer, ArrayList<Agent>> receiveAgents() throws Exception {
         clearBuffers();
-        recvBuffers();
+        recvBuffers(realm.time()+1); // TODO - hack!!
         Map<Integer, ArrayList<Agent>> inAgentsByLinkId = new HashMap<>();
         for (ByteBuffer bb : bufsByRealmId.values()) {
             while (bb.remaining() > 0) {
@@ -109,13 +124,13 @@ public class Communicator {
             bb.putInt(link.id());
             bb.putInt(routedAgentsByLinkId.get(link.id()));
         }
-        sendBuffers();
+        sendBuffers(realm.time());
     }
     
     public Map<Integer, Integer> receiveRoutedCounters() throws Exception {
         clearBuffers();
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        recvBuffers();
+        recvBuffers(realm.time());
         for (ByteBuffer bb : bufsByRealmId.values()) {
             while (bb.remaining() > 0) {
                 int linkid = bb.getInt();

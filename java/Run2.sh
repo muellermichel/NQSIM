@@ -17,39 +17,47 @@ jvm_opts="$jvm_opts -Xms20g"
 
 #jvm_opts="$jvm_opts -XX:+AlwaysPreTouch"
 jvm_opts="$jvm_opts -enableassertions"
-jvm_opts="$jvm_opts -Xloggc:nqsim.jvm"
+jvm_opts="$jvm_opts -Xloggc:$nqsim_work/nqsim.jvm"
 jvm_opts="$jvm_opts -XX:+PrintGCDetails"
 
 # Parameters
 world="$nqsim_work/world"
 edgesz=2
 agents=1
-plansz=10
+plansz=100
 realms=2
-#realms=1
 timestep=60
-nsteps=5
-
-generator=ch.ethz.systems.nqsim2.SquareWorldGenerator
-simulator=ch.ethz.systems.nqsim2.WorldSimulator
-
-generator_opts="$world $realms $agents $plansz $edgesz"
-simulator_opts="$world $timestep $nsteps"
+nsteps=100
 
 function generation {
-    time java $jvm_opts -classpath $classpath $generator $generator_opts | tee generator.log
+    generator=ch.ethz.systems.nqsim2.SquareWorldGenerator
+    generator_opts="$world $realms $agents $plansz $edgesz"
+    time java $jvm_opts -classpath $classpath $generator $generator_opts | tee $nqsim_work/generator.log
 }
 
 function simulation {
+    simulator=ch.ethz.systems.nqsim2.WorldSimulator
+    simulator_opts="$world $timestep $nsteps"
     time mpirun -np $realms ${hosts_option} \
-        java $jvm_opts -classpath $classpath $simulator $simulator_opts | tee simulator.log
-    sort -k4 -n $world-realm-*.log | grep "Routed"
-    sort -k4 -n $world-realm-*.log | grep "\->"
+        java $jvm_opts -classpath $classpath $simulator $simulator_opts | tee $nqsim_work/simulator.log
+    sort -k4 -n $world-realm-*.log | grep "Routed" | tee $nqsim_work/performance.log
+    sort -k4 -n $world-realm-*.log | grep "\->" | tee $nqsim_work/result.log
+}
+
+function serial {
+    realms=1
+    cp -r $nqsim_work $nqsim_work-mpi
+    rm $nqsim_work/*
+    generation
+    simulation
+    cp -r $nqsim_work $nqsim_work-serial
 }
 
 mvn clean
 mvn install
 rm $nqsim_work/*
+rm -r $nqsim_work-mpi
+rm -r $nqsim_work-serial
 
 while true; do
     read -p "Generate world? " should_gen
@@ -69,5 +77,11 @@ while true; do
     esac
 done
 
-#java $jvm_opts -classpath $classpath ch.ethz.systems.nqsim2.SquareWorldGenerator /tmp/world | tee nqsim2.txt
-#java $jvm_opts -classpath $classpath ch.ethz.systems.nqsim2.WorldSimulator /tmp/world | tee nqsim2.txt
+while true; do
+    read -p "Run serial? " should_serial
+    case $should_serial in
+          [Yy]* ) serial; break;;
+          [Nn]* ) break ;;
+              * ) echo "[Yy]es or [Nn]o?";;
+    esac
+done

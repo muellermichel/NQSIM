@@ -14,7 +14,7 @@ public class WorldSimulator {
 
     public static boolean log(int time, int realmid, String s) {
         logfile.write(String.format(
-            "[ time = %d,\trealmid = %d ] %s\n", time, realmid, s));
+            "[ time = %d ] %s\n", time, s));
         return true;
     }
 

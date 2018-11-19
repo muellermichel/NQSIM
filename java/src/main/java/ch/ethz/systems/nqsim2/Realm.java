@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import mpi.MPI;
+
 public class Realm implements Serializable {
 
     private static final long serialVersionUID = -4933703718837514089L;
@@ -120,7 +122,7 @@ public class Realm implements Serializable {
         for (Map.Entry<Integer, ArrayList<Agent>> entry : inAgentsByLinkId.entrySet()) {
             int localrouted = 0;
             for (Agent agent : entry.getValue()) {
-                if (processAgent(agent)) {
+                if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
                     localrouted++;
                     routed++;
                 } else {
