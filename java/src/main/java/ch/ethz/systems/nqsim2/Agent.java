@@ -9,7 +9,7 @@ public class Agent implements Serializable {
     // Timestamp of when the agent will be ready to exit link.
     protected int linkFinishTime;
     // Time that the agent takes to traverse a link;
-    protected final int timeToPass; 
+    protected final int timeToPass; // TODO - it seems that I don't need this. 
     // Array of link ids where the agent will go.
     protected final int[] plan;
     // Current position in plan.

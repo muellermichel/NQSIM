@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Map;
 
 public class World implements Serializable {
 
@@ -13,10 +14,16 @@ public class World implements Serializable {
     private final Realm[] realms;
     // Agents that circulate within the World.
     private final Agent[] agents;
+    // Conversion between LinkInternal and the global id of the link. Debug only.
+    private final Map<LinkInternal, Integer> globalIdByLink;
 
-    public World(Realm[] realms, Agent[] agents) {
+    public World(
+            Realm[] realms, 
+            Agent[] agents, 
+            Map<LinkInternal, Integer> globalIdByLink) {
         this.realms = realms;
         this.agents = agents;
+        this.globalIdByLink = globalIdByLink;
     }
     
     public Realm realm(int id) {
@@ -31,7 +38,11 @@ public class World implements Serializable {
         return agents;
     }
 
-    public static void serialize (World world, String filename) throws Exception {
+    public Map<LinkInternal, Integer> globalIdByLink() {
+        return globalIdByLink;
+    }
+
+    public static void serialize(World world, String filename) throws Exception {
         ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename));
         oos.writeObject(world);
         oos.close();

@@ -15,7 +15,7 @@ public class WorldDumper {
     }
 
     public static void dumpRealm(String worldpath, Realm realm) throws Exception {
-        String filepath = String.format("%s-realm-%d.xml", worldpath, realm.id());
+        String filepath = String.format("%s-realm-%d-%d.xml", worldpath, realm.id(), realm.time());
         PrintWriter writer = new PrintWriter(new FileWriter(filepath));
         writer.println(String.format("<realm time=%d id=%d>",
             realm.time(), realm.id()));

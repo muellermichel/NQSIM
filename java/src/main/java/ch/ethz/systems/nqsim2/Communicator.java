@@ -93,7 +93,7 @@ public class Communicator {
                 for (int j = 0; j < nagents; j++) {
                     int agentid = bb.getInt();
                     int planindex = bb.getInt();
-                    agents[agentid].planIndex(planindex); // TODO - should we do this here?
+                    agents[agentid].planIndex(planindex);
                     recvAgents.add(agents[agentid]);
                 }
                 inAgentsByLinkId.put(linkid, recvAgents);

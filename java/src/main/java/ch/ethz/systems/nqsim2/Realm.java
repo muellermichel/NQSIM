@@ -55,9 +55,11 @@ public class Realm implements Serializable {
     }
 
     protected boolean processAgent(Agent agent) {
-        LinkInternal nextHop = links[agent.plan[agent.planIndex]];
-        if (nextHop.push(time, agent)) {
+        LinkInternal next = links[agent.plan[agent.planIndex + 1]];
+        if (next.push(time, agent)) {
             agent.planIndex++;
+            assert(WorldSimulator.log(time, id, String.format("-> %d agent %d", 
+                WorldSimulator.globalIdByLink.get(next), agent.id)));
             return true;
         } else {
             return false;
@@ -65,12 +67,12 @@ public class Realm implements Serializable {
 
     }
 
-    protected int processLink(LinkInternal link) {
+    protected int processInternalLinks(LinkInternal link) {
         int routed = 0;
         if (link.nexttime() > 0 && time >= link.nexttime()) {
             Agent agent = link.queue().peek();
             while (agent.linkFinishTime <= time) {
-                if (agent.planIndex == agent.plan.length || processAgent(agent)) {
+                if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
                     link.pop();
                     routed++;
                     if ((agent = link.queue().peek()) == null) {
@@ -95,7 +97,7 @@ public class Realm implements Serializable {
 
         // Process internal links.
         for (LinkInternal link : internalLinks) {
-            routed += processLink(link);
+            routed += processInternalLinks(link);
         }
 
         // Send outgoing agents.

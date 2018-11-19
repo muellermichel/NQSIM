@@ -1,6 +1,8 @@
 package ch.ethz.systems.nqsim2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class WorldGenerator {
 
@@ -46,6 +48,7 @@ public abstract class WorldGenerator {
     private ArrayList<Integer> edgeId2RealmId;
     // Translation from edge id to link id (internal to realm).
     private ArrayList<Integer> edgeId2LinkId;
+    private static Map<LinkInternal, Integer> globalIdByLink;
     // Array of realms (indexed by realm id).
     private ArrayList<Realm> realms;
     // Array of agents (indexed by agent id).
@@ -79,6 +82,7 @@ public abstract class WorldGenerator {
         ArrayList<ArrayList<LinkBoundary>> localInLinks = new ArrayList<>(numRealms);
         ArrayList<ArrayList<LinkBoundary>> localOutLinks = new ArrayList<>(numRealms);
         edgeId2LinkId = new ArrayList<>(edges.size());
+        globalIdByLink = new HashMap<>();
 
         // Initialize data structures for each Realm.
         for (int i = 0; i < numRealms; i++) {
@@ -109,6 +113,9 @@ public abstract class WorldGenerator {
 
             // Saving the convertion between a global id and a local id.
             edgeId2LinkId.add(i, id);
+
+            // Saving the conversion between link and global id;
+            globalIdByLink.put(link, i);
 
             // Add Link to Realm
             localLinks.get(fromRealm).add(link);
@@ -170,7 +177,8 @@ public abstract class WorldGenerator {
         System.out.println(edgeId2LinkId);
         return new World(
             realms.toArray(new Realm[realms.size()]), 
-            agents.toArray(new Agent[agents.size()]));
+            agents.toArray(new Agent[agents.size()]),
+            globalIdByLink);
     }
 
 }
