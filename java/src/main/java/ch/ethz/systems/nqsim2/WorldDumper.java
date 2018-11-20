@@ -5,13 +5,16 @@ import java.io.PrintWriter;
 
 public class WorldDumper {
 
-    public static void dumpWorld(String worldpath, World world) throws Exception {
+    public static boolean dumpWorld(String worldpath, World world) throws Exception {
+        System.out.println("Dumping world to " + worldpath);
         for (Realm realm : world.realms()) {
             dumpRealm(worldpath, realm);
         }
         for (Agent agent : world.agents()) {
             dumpAgent(worldpath, agent);
         }
+        System.out.println("Finished dumping world.");
+        return true;
     }
 
     public static void dumpRealm(String worldpath, Realm realm) throws Exception {

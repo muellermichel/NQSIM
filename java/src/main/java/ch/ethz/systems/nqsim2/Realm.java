@@ -7,8 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import mpi.MPI;
-
 public class Realm implements Serializable {
 
     private static final long serialVersionUID = -4933703718837514089L;

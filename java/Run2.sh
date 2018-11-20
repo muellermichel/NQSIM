@@ -3,8 +3,7 @@
 nqsim_home="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 nqsim_work="$nqsim_home/data"
 
-classpath="$classpath:$nqsim_home/target/test-classes"
-classpath="$classpath:$nqsim_home/target/classes"
+classpath="$classpath:$nqsim_home/target/nqsim-0.1-SNAPSHOT.jar"
 classpath="$classpath:/usr/local/lib/mpi.jar"
 
 jvm_opts="$jvm_opts -server"
@@ -16,18 +15,18 @@ jvm_opts="$jvm_opts -Xmx20g"
 jvm_opts="$jvm_opts -Xms20g"
 
 #jvm_opts="$jvm_opts -XX:+AlwaysPreTouch"
-jvm_opts="$jvm_opts -enableassertions"
+#jvm_opts="$jvm_opts -enableassertions"
 jvm_opts="$jvm_opts -Xloggc:$nqsim_work/nqsim.jvm"
 jvm_opts="$jvm_opts -XX:+PrintGCDetails"
 
 # Parameters
 world="$nqsim_work/world"
-edgesz=2
-agents=1
-plansz=100
-realms=2
+edgesz=256
+agents=10000000
+plansz=32
+realms=32
 timestep=60
-nsteps=100
+nsteps=32
 
 function generation {
     generator=ch.ethz.systems.nqsim2.SquareWorldGenerator

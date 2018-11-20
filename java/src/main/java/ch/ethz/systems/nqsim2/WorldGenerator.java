@@ -173,8 +173,6 @@ public abstract class WorldGenerator {
         edgeId2RealmId = setupPartitions(numRealms);
         realms = setupRealms(numRealms);
         agents = setupAgents();
-        System.out.println(edgeId2RealmId);
-        System.out.println(edgeId2LinkId);
         return new World(
             realms.toArray(new Realm[realms.size()]), 
             agents.toArray(new Agent[agents.size()]),
