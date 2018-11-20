@@ -132,6 +132,8 @@ public class Realm implements Serializable {
             routedAgentsByLinkId.put(entry.getKey(), localrouted);
         }
 
+        comm.waitSends();
+
         // Send locally rounted agents counters.
         comm.sendRoutedCounters(routedAgentsByLinkId);
 
@@ -143,6 +145,8 @@ public class Realm implements Serializable {
                 links[linkid].pop();
             }
         }
+
+        comm.waitSends();
 
         return routed;
     }

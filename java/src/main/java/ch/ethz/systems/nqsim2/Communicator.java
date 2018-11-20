@@ -23,7 +23,7 @@ public class Communicator {
     // All the agents in the world.
     private final Agent[] agents;
     // Buffer capacity for each neighbor realm.
-    private final int bufferCapacity = 256*1024*1024;
+    private final int bufferCapacity = 1024*1024;
 
     public Communicator(Realm realm, Agent[] agents) throws Exception {
         MPI.COMM_WORLD.setErrhandler(MPI.ERRORS_ARE_FATAL);
@@ -47,42 +47,53 @@ public class Communicator {
         }
     }
 
-    private void sendBuffers(int tag) throws Exception {
-        if (! sndRequests.isEmpty()) {
-            System.out.println(String.format("%d wait ISends, %d time...", realm.id(), tag));
-            Request.waitAll(sndRequests.toArray(new Request[sndBufsByRealmId.size()]));
-            System.out.println(String.format("%d wait ISends, %d time...done!", realm.id(), tag));
+    public void waitSends() throws Exception {
+        assert(!sndRequests.isEmpty());
+        System.out.println(String.format("%d wait ISends...", realm.id()));
+        Status[] statuses = Request.waitAllStatus(sndRequests.toArray(new Request[sndBufsByRealmId.size()]));
+        for (Status status : statuses) {
+            System.out.println(String.format("wait for status %d", status.getError()));
+
         }
+        System.out.println(String.format("%d wait ISends...done!", realm.id()));
         sndRequests.clear();
-        for (Map.Entry<Integer, ByteBuffer> entry : sndBufsByRealmId.entrySet()) {
-            System.out.println(String.format("%d sendBuffers to %d (%d bytes), %d time...", realm.id(), entry.getKey(), entry.getValue().position(), tag));
-            sndRequests.add(MPI.COMM_WORLD.iSend(
-                entry.getValue(), entry.getValue().position(), 
-                MPI.BYTE, entry.getKey(), tag));
-            System.out.println(String.format("%d sendBuffers to %d (%d bytes), %d time...done!", realm.id(), entry.getKey(), entry.getValue().position(), tag));
-        }
     }
 
-    public void recvBuffers(int tag) throws Exception {
-        for (Map.Entry<Integer, ByteBuffer> entry : rcvBufsByRealmId.entrySet()) {
-            System.out.println(String.format("%d recvBuffers from %d (? bytes), %d time...", realm.id(), entry.getKey(), tag));
-            Status status = MPI.COMM_WORLD.recv(
-                entry.getValue(), entry.getValue().capacity(), 
-                MPI.BYTE, entry.getKey(), tag);
-            entry.getValue().limit(status.getCount(MPI.BYTE));
-            System.out.println(String.format("%d recvBuffers from %d (%d bytes), %d time...done!", realm.id(), entry.getKey(), status.getCount(MPI.BYTE), tag));
-        }
-
+    private static void copyBB(ByteBuffer from, ByteBuffer to) {
+       from.rewind();//copy from the beginning
+       to.put(from);
+       from.rewind();
+       to.flip();
     }
 
-    public void clearBuffers(Collection<ByteBuffer> bbs) throws Exception {
-        for (ByteBuffer bb : bbs) {
+    private void sendBuffers(int tag) throws Exception {
+        for (Integer toid : sndBufsByRealmId.keySet()) {
+            ByteBuffer bb = sndBufsByRealmId.get(toid);
+            ByteBuffer mpibb = MPI.newByteBuffer(bufferCapacity);
+            int bytes = bb.position();
+            copyBB(bb, mpibb);
+            System.out.println(String.format("%d sendBuffers to %d, %d bytes, time %d...", realm.id(), toid, bytes, tag));
+            sndRequests.add(MPI.COMM_WORLD.iSend(mpibb, bytes, MPI.BYTE, toid, tag));
+            System.out.println(String.format("%d sendBuffers to %d, %d bytes, time %d...done!", realm.id(), toid, bytes, tag));
             bb.clear();
         }
     }
 
+    public void recvBuffers(int tag) throws Exception {
+        for (Integer fromid : rcvBufsByRealmId.keySet()) {
+            System.out.println(String.format("%d recvBuffers from %d, time %d...", realm.id(), fromid, tag));
+            ByteBuffer bb = rcvBufsByRealmId.get(fromid);
+            ByteBuffer mpibb = MPI.newByteBuffer(bufferCapacity);
+            bb.clear();
+            Status status = MPI.COMM_WORLD.recv(mpibb, bufferCapacity, MPI.BYTE, fromid, tag);
+            copyBB(mpibb, bb);
+            bb.limit(status.getCount(MPI.BYTE));
+            System.out.println(String.format("%d recvBuffers from %d, %d bytes, time %d...done!", realm.id(), fromid, bb.remaining(), tag));
+        }
+
+    }
+
     public void sendAgents(Map<LinkBoundary, ArrayList<Agent>> outAgentsByLinkId) throws Exception {
-        clearBuffers(sndBufsByRealmId.values());
         for (Map.Entry<LinkBoundary,ArrayList<Agent>> entry : outAgentsByLinkId.entrySet()) {
             LinkBoundary blink = entry.getKey();
             ArrayList<Agent> outgoing = entry.getValue();
@@ -102,7 +113,6 @@ public class Communicator {
     }
 
     public Map<Integer, ArrayList<Agent>> receiveAgents() throws Exception {
-        clearBuffers(rcvBufsByRealmId.values());
         recvBuffers(realm.time()); // TODO - hack, other is here!
         Map<Integer, ArrayList<Agent>> inAgentsByLinkId = new HashMap<>();
         for (ByteBuffer bb : rcvBufsByRealmId.values()) {
@@ -123,7 +133,6 @@ public class Communicator {
     }
 
     public void sendRoutedCounters(Map<Integer, Integer> routedAgentsByLinkId) throws Exception {
-        clearBuffers(sndBufsByRealmId.values());
         for (LinkBoundary link : realm.inLinks()) {
             ByteBuffer bb = sndBufsByRealmId.get(link.fromrealm());
             bb.putInt(link.id());
@@ -133,7 +142,6 @@ public class Communicator {
     }
     
     public Map<Integer, Integer> receiveRoutedCounters() throws Exception {
-        clearBuffers(rcvBufsByRealmId.values());
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
         recvBuffers(realm.time() + 1); // TODO - one is here!
         for (ByteBuffer bb : rcvBufsByRealmId.values()) {
