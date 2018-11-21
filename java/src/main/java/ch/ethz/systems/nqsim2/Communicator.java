@@ -22,7 +22,7 @@ public class Communicator {
     // All the agents in the world.
     private final Agent[] agents;
     // Buffer capacity for each neighbor realm.
-    private final int bufferCapacity = 1024*1024;
+    private final int bufferCapacity = 128*1024*1024;
 
     public Communicator(Realm realm, Agent[] agents) throws Exception {
         MPI.COMM_WORLD.setErrhandler(MPI.ERRORS_ARE_FATAL);
@@ -35,13 +35,13 @@ public class Communicator {
         for (LinkBoundary inlink : realm.inLinks()) {
             int realmid = inlink.fromrealm();
             if (!rcvBufsByRealmId.containsKey(realmid)) {
-                rcvBufsByRealmId.put(realmid, ByteBuffer.allocateDirect(bufferCapacity));
+                rcvBufsByRealmId.put(realmid, MPI.newByteBuffer(bufferCapacity));
             }
         }
         for (LinkBoundary outlink : realm.outLinks()) {
             int realmid = outlink.torealm();
             if (!sndBufsByRealmId.containsKey(realmid)) {
-                sndBufsByRealmId.put(realmid, ByteBuffer.allocateDirect(bufferCapacity));
+                sndBufsByRealmId.put(realmid, MPI.newByteBuffer(bufferCapacity));
             }
         }
     }
@@ -53,20 +53,10 @@ public class Communicator {
         }
     }
 
-    private static void copyBB(ByteBuffer from, ByteBuffer to) {
-       from.rewind();//copy from the beginning
-       to.put(from);
-       from.rewind();
-       to.flip();
-    }
-
     private void sendBuffers(int tag) throws Exception {
         for (Integer toid : sndBufsByRealmId.keySet()) {
             ByteBuffer bb = sndBufsByRealmId.get(toid);
-            ByteBuffer mpibb = MPI.newByteBuffer(bufferCapacity);
-            int bytes = bb.position();
-            copyBB(bb, mpibb);
-            sndRequests.add(MPI.COMM_WORLD.iSend(mpibb, bytes, MPI.BYTE, toid, tag));
+            sndRequests.add(MPI.COMM_WORLD.iSend(bb, bb.position(), MPI.BYTE, toid, tag));
             bb.clear();
         }
     }
@@ -74,10 +64,8 @@ public class Communicator {
     public void recvBuffers(int tag) throws Exception {
         for (Integer fromid : rcvBufsByRealmId.keySet()) {
             ByteBuffer bb = rcvBufsByRealmId.get(fromid);
-            ByteBuffer mpibb = MPI.newByteBuffer(bufferCapacity);
             bb.clear();
-            Status status = MPI.COMM_WORLD.recv(mpibb, bufferCapacity, MPI.BYTE, fromid, tag);
-            copyBB(mpibb, bb);
+            Status status = MPI.COMM_WORLD.recv(bb, bufferCapacity, MPI.BYTE, fromid, tag);
             bb.limit(status.getCount(MPI.BYTE));
         }
 

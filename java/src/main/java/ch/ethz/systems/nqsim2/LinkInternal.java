@@ -27,7 +27,7 @@ public class LinkInternal implements Serializable {
         // len (=1000 m) / vel (= 60 Km/h) -> 60 secs
         //this.free_time = 60;
         // Random speed between 20 Km/h and 100 Km/h
-        this.free_time = 1000 / (new Random().nextInt(120) + 20);
+        this.free_time = 3600 / Math.max(new Random().nextInt(100), 40);
         // len (=1000 m) / 5 -> 200 secs
         this.jam_time = 200;
         this.currentCapacity = capacity;
