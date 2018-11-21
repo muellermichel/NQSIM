@@ -26,6 +26,7 @@ public class Realm implements Serializable {
     private final LinkBoundary[] outLinks;
     // Current timestamp
     private int time;
+    private int routed;
 
     public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks, 
             LinkBoundary[] outLinks) throws Exception {
@@ -67,40 +68,28 @@ public class Realm implements Serializable {
 
     }
 
-    protected int processInternalLinks(LinkInternal link) {
-        int routed = 0;
-        if (link.nexttime() > 0 && time >= link.nexttime()) {
-            Agent agent = link.queue().peek();
-            while (agent.linkFinishTime <= time) {
-                if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
-                    link.pop();
-                    routed++;
-                    if ((agent = link.queue().peek()) == null) {
+    protected void processInternalLinks() {
+        for (LinkInternal link : internalLinks) {
+            if (link.nexttime() > 0 && time >= link.nexttime()) {
+                Agent agent = link.queue().peek();
+                while (agent.linkFinishTime <= time) {
+                    if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
+                        link.pop();
+                        routed++;
+                        if ((agent = link.queue().peek()) == null) {
+                            break;
+                        }
+                    } else {
                         break;
                     }
-                } else {
-                    break;
                 }
+                link.nexttime(agent == null ? 0 : agent.linkFinishTime);
             }
-            link.nexttime(agent == null ? 0 : agent.linkFinishTime);
         }
-        return routed;
     }
 
-    // Updates all links and agents. Returns the number of routed agents.
-    public int tick(int delta, Communicator comm) throws Exception {
-        int routed = 0;
-        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
+    protected Map<LinkBoundary, ArrayList<Agent>> processOutgoingLinks() {
         Map<LinkBoundary, ArrayList<Agent>> outAgentsByBoundary = new HashMap<>();
-        Map<Integer, ArrayList<Agent>> inAgentsByLinkId = new HashMap<>();
-        time += delta;
-
-        // Process internal links.
-        for (LinkInternal link : internalLinks) {
-            routed += processInternalLinks(link);
-        }
-
-        // Send outgoing agents.
         for (LinkBoundary blink : outLinks) {
             LinkInternal ilink = links[blink.id()];
             ArrayList<Agent> outgoing = new ArrayList<>();
@@ -113,10 +102,11 @@ public class Realm implements Serializable {
             }
             outAgentsByBoundary.put(blink, outgoing);
         }
-        comm.sendAgents(outAgentsByBoundary);
+        return outAgentsByBoundary;
+    }
 
-        // Receive incomming agents.
-        inAgentsByLinkId = comm.receiveAgents();
+    protected Map<Integer, Integer> processIngoingLinks(Map<Integer, ArrayList<Agent>> inAgentsByLinkId) {
+        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
         for (Map.Entry<Integer, ArrayList<Agent>> entry : inAgentsByLinkId.entrySet()) {
             int localrouted = 0;
             for (Agent agent : entry.getValue()) {
@@ -129,21 +119,43 @@ public class Realm implements Serializable {
             }
             routedAgentsByLinkId.put(entry.getKey(), localrouted);
         }
+        return routedAgentsByLinkId;
+    }
 
-        comm.waitSends();
-
-        // Send locally rounted agents counters.
-        comm.sendRoutedCounters(routedAgentsByLinkId);
-
-        // Receive number of agents routed remotelly.
-        routedAgentsByLinkId = comm.receiveRoutedCounters();
+    protected void processRemotellyRoutedAgents(Map<Integer, Integer> routedAgentsByLinkId) {
         for (Integer linkid : routedAgentsByLinkId.keySet()) {
             int counter = routedAgentsByLinkId.get(linkid);
             for (int i = 0; i < counter; i++) {
                 links[linkid].pop();
             }
         }
+    }
 
+    // Updates all links and agents. Returns the number of routed agents.
+    public int tick(int delta, Communicator comm) throws Exception {
+        routed = 0;
+        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
+        time += delta;
+
+        // Process internal links.
+        processInternalLinks();
+
+        // Send outgoing agents.
+        comm.sendAgents(processOutgoingLinks());
+
+        // Receive incomming agents.
+        routedAgentsByLinkId = processIngoingLinks(comm.receiveAgents());
+
+        // Wait for all sends to be complete.
+        comm.waitSends();
+
+        // Send locally rounted agents counters.
+        comm.sendRoutedCounters(routedAgentsByLinkId);
+
+        // Receive number of agents routed remotelly.
+        processRemotellyRoutedAgents(comm.receiveRoutedCounters());
+
+        // Wait for all sends to be complete.
         comm.waitSends();
 
         return routed;
