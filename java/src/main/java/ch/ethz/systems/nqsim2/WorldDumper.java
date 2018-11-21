@@ -62,9 +62,8 @@ public class WorldDumper {
     public static void dumpAgent(String worldpath, Agent agent) throws Exception {
         String filepath = String.format("%s-agents.xml", worldpath);
         PrintWriter writer = new PrintWriter(new FileWriter(filepath));
-        writer.println(String.format("\t<agent id=%d linkFinishTime=%d timeToPass=%d planIndex=%d>",
-            agent.id(), agent.linkFinishTime(), agent.timeToPass(), 
-            agent.planIndex()));
+        writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
+            agent.id(), agent.linkFinishTime(), agent.planIndex()));
         writer.print("\t<plan>");
         for (int edge : agent.plan()) {
             writer.print(String.format("%d ", edge));   

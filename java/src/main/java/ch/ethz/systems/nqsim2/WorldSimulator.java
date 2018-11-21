@@ -40,12 +40,7 @@ public class WorldSimulator {
 
         System.out.println("Running world");
         for (int i = 0; i < numsteps; i++) {
-            long time = System.currentTimeMillis();
-            int routed = realm.tick(timestep, comm);
-            time = 1 + System.currentTimeMillis() - time; 
-            log((i + 1)*timestep, realmid, String.format(
-                "Routed %d agents in %d ms ( %d s/r)",
-                routed, time, timestep*1000/time));
+            realm.tick(timestep, comm);
         }
         System.out.println("Running world finished");
         MPI.Finalize();

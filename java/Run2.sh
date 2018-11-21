@@ -6,11 +6,11 @@ classpath="$classpath:$nqsim_home/target/nqsim-0.1-SNAPSHOT.jar"
 classpath="$classpath:/usr/local/lib/mpi.jar"
 
 # Parameters
-edgesz=32
-agents=100
-plansz=32
-timestep=60
-nsteps=32
+edgesz=187
+agents=3000000
+plansz=256
+timestep=1
+nsteps=256
 
 function prepare_jvm_opts {
     jvm_opts="$jvm_opts -server"
@@ -40,7 +40,7 @@ function simulation {
     simulator_opts="$world $timestep $nsteps"
     time mpirun -np $realms ${hosts_option} \
         java $jvm_opts -classpath $classpath $simulator $simulator_opts | tee $nqsim_work/simulator.log
-    sort -k4 -n $world-realm-*.log | grep "Routed" | tee $nqsim_work/performance.log
+    sort -k4 -n $world-realm-*.log | grep "Processed" | tee $nqsim_work/performance.log
     sort -k4 -n $world-realm-*.log | grep "\->" | tee $nqsim_work/result.log
 }
 
@@ -48,10 +48,8 @@ mvn clean
 mvn install
 
 # TODO - improve communication
-# TODO - get logging for decomposition
-# TODO - 60km/h, 60 ticks to exit link
 
-for i in 1 2
+for i in 1
 #for i in 1 2 4 8 16 32 48
 do
     echo "Running with $i realms..."

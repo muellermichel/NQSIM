@@ -128,12 +128,12 @@ public class Communicator {
             bb.putInt(link.id());
             bb.putInt(routedAgentsByLinkId.get(link.id()));
         }
-        sendBuffers(realm.time() + 1); // TODO - hack!
+        sendBuffers(realm.time());
     }
     
     public Map<Integer, Integer> receiveRoutedCounters() throws Exception {
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        recvBuffers(realm.time() + 1); // TODO - hack!
+        recvBuffers(realm.time());
         for (ByteBuffer bb : rcvBufsByRealmId.values()) {
             while (bb.remaining() > 0) {
                 int linkid = bb.getInt();

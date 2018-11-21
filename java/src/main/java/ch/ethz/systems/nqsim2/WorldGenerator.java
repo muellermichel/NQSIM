@@ -107,7 +107,7 @@ public abstract class WorldGenerator {
             int id = localCounters.get(fromRealm);
 
             // Number of slots in the Link.
-            int capacity = 512; // TODO - get real number for this.
+            int capacity = 128; // TODO - get real number for this.
 
             LinkInternal link = new LinkInternal(capacity);
 

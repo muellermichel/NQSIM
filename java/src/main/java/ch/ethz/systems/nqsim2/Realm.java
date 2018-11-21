@@ -25,7 +25,7 @@ public class Realm implements Serializable {
     private final LinkBoundary[] inLinks;
     private final LinkBoundary[] outLinks;
     // Current timestamp
-    private int time;
+    private int secs;
     private int routed;
 
     public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks, 
@@ -57,9 +57,9 @@ public class Realm implements Serializable {
 
     protected boolean processAgent(Agent agent) {
         LinkInternal next = links[agent.plan[agent.planIndex + 1]];
-        if (next.push(time, agent)) {
+        if (next.push(secs, agent)) {
             agent.planIndex++;
-            assert(WorldSimulator.log(time, id, String.format("-> %d agent %d", 
+            assert(WorldSimulator.log(secs, id, String.format("-> %d agent %d", 
                 WorldSimulator.globalIdByLink.get(next), agent.id)));
             return true;
         } else {
@@ -70,9 +70,9 @@ public class Realm implements Serializable {
 
     protected void processInternalLinks() {
         for (LinkInternal link : internalLinks) {
-            if (link.nexttime() > 0 && time >= link.nexttime()) {
+            if (link.nexttime() > 0 && secs >= link.nexttime()) {
                 Agent agent = link.queue().peek();
-                while (agent.linkFinishTime <= time) {
+                while (agent.linkFinishTime <= secs) {
                     if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
                         link.pop();
                         routed++;
@@ -94,7 +94,7 @@ public class Realm implements Serializable {
             LinkInternal ilink = links[blink.id()];
             ArrayList<Agent> outgoing = new ArrayList<>();
             for (Agent agent : ilink.queue()) {
-                if (agent.linkFinishTime > time) {
+                if (agent.linkFinishTime > secs) {
                     break;
                 } else {
                     outgoing.add(agent);
@@ -133,12 +133,16 @@ public class Realm implements Serializable {
 
     // Updates all links and agents. Returns the number of routed agents.
     public int tick(int delta, Communicator comm) throws Exception {
-        routed = 0;
         Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        time += delta;
+        long start, frouting, fcomm;
+        routed = 0;
+        secs += delta;
+        start = System.currentTimeMillis();
 
         // Process internal links.
         processInternalLinks();
+
+        frouting = System.currentTimeMillis();
 
         // Send outgoing agents.
         comm.sendAgents(processOutgoingLinks());
@@ -158,11 +162,19 @@ public class Realm implements Serializable {
         // Wait for all sends to be complete.
         comm.waitSends();
 
+        fcomm = System.currentTimeMillis();
+
+        WorldSimulator.log(secs, id, String.format(
+                "Processed %d agents in %d ms (routing = %d ms; comm = %d ms)",
+                routed,
+                fcomm - start,
+                frouting - start,
+                fcomm - frouting));
         return routed;
     }
 
     public int time() {
-        return this.time;
+        return this.secs;
     }
 
     public int id() {
