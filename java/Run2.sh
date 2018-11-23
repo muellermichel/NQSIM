@@ -8,9 +8,9 @@ classpath="$classpath:/usr/local/lib/mpi.jar"
 # Parameters
 edgesz=187
 agents=3000000
-plansz=256
+plansz=128
 timestep=1
-nsteps=256
+nsteps=128
 
 function prepare_jvm_opts {
     jvm_opts="$jvm_opts -server"
@@ -37,8 +37,8 @@ function generation {
 function simulation {
     world="$nqsim_work/world"
     simulator=ch.ethz.systems.nqsim2.WorldSimulator
-    simulator_opts="$world $timestep $nsteps"
-    time mpirun -np $realms ${hosts_option} \
+    simulator_opts="$world $realms $timestep $nsteps"
+#    time mpirun -np $realms ${hosts_option} \
         java $jvm_opts -classpath $classpath $simulator $simulator_opts | tee $nqsim_work/simulator.log
     sort -k4 -n $world-realm-*.log | grep "Processed" | tee $nqsim_work/performance.log
     sort -k4 -n $world-realm-*.log | grep "\->" | tee $nqsim_work/result.log
@@ -46,8 +46,6 @@ function simulation {
 
 mvn clean
 mvn install
-
-# TODO - improve communication
 
 for i in 1
 #for i in 1 2 4 8 16 32 48

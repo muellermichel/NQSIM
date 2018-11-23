@@ -79,8 +79,7 @@ public abstract class WorldGenerator {
         ArrayList<Realm> realms = new ArrayList<>(numRealms);
         ArrayList<Integer> localCounters = new ArrayList<>(numRealms);
         ArrayList<ArrayList<LinkInternal>> localLinks = new ArrayList<>(numRealms);
-        ArrayList<ArrayList<LinkBoundary>> localInLinks = new ArrayList<>(numRealms);
-        ArrayList<ArrayList<LinkBoundary>> localOutLinks = new ArrayList<>(numRealms);
+        ArrayList<ArrayList<LinkInternal>> localInLinks = new ArrayList<>(numRealms);
         edgeId2LinkId = new ArrayList<>(edges.size());
         globalIdByLink = new HashMap<>();
 
@@ -89,7 +88,6 @@ public abstract class WorldGenerator {
             localCounters.add(i, 0);
             localLinks.add(i, new ArrayList<>());
             localInLinks.add(i, new ArrayList<>());
-            localOutLinks.add(i, new ArrayList<>());
         }
 
         for (int i = 0; i < edges.size(); i++) {
@@ -122,9 +120,7 @@ public abstract class WorldGenerator {
 
             // If Link leads to a diff Realm, add it to data structures.
             if (fromRealm != toRealm) {
-                LinkBoundary blink = new LinkBoundary(id, fromRealm, toRealm);
-                localOutLinks.get(fromRealm).add(blink);
-                localInLinks.get(toRealm).add(blink);
+                localInLinks.get(toRealm).add(link);
             }
 
             // Update counter.
@@ -138,8 +134,7 @@ public abstract class WorldGenerator {
                 new Realm(
                     i,
                     localLinks.get(i).toArray(new LinkInternal[localLinks.get(i).size()]), 
-                    localInLinks.get(i).toArray(new LinkBoundary[localInLinks.get(i).size()]), 
-                    localOutLinks.get(i).toArray(new LinkBoundary[localOutLinks.get(i).size()])));
+                    localInLinks.get(i).toArray(new LinkInternal[localInLinks.get(i).size()])));
         }
 
         return realms;

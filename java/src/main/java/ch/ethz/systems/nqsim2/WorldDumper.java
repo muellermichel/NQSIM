@@ -10,9 +10,7 @@ public class WorldDumper {
         for (Realm realm : world.realms()) {
             dumpRealm(worldpath, realm);
         }
-        for (Agent agent : world.agents()) {
-            dumpAgent(worldpath, agent);
-        }
+        dumpAgents(worldpath, world.agents());
         System.out.println("Finished dumping world.");
         return true;
     }
@@ -28,15 +26,10 @@ public class WorldDumper {
         }
         writer.println("\t</links>");
         writer.println("\t<inlinks>");
-        for (LinkBoundary link : realm.inLinks()) {
-            dumpBoundaryLink(writer, link);
+        for (int i = 0; i < realm.inLinks().length; i++) {
+            dumpInternalLink(writer, i, realm.links()[i]);
         }
         writer.println("\t</inlinks>");
-        writer.println("\t<outlinks>");
-        for (LinkBoundary link : realm.outLinks()) {
-            dumpBoundaryLink(writer, link);
-        }
-        writer.println("\t</outlinks>");
         writer.println("</realm>");
         writer.close();
     }
@@ -53,23 +46,19 @@ public class WorldDumper {
         writer.println("\t\t</ilink>");
     }
 
-    public static void dumpBoundaryLink(PrintWriter writer, LinkBoundary link) {
-        writer.println(String.format("\t\t<blink id=%d from=%d to=%d>",
-               link.id(), link.fromrealm(), link.torealm()));
-
-    }
-    
-    public static void dumpAgent(String worldpath, Agent agent) throws Exception {
+    public static void dumpAgents(String worldpath, Agent[] agents) throws Exception {
         String filepath = String.format("%s-agents.xml", worldpath);
         PrintWriter writer = new PrintWriter(new FileWriter(filepath));
-        writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
-            agent.id(), agent.linkFinishTime(), agent.planIndex()));
-        writer.print("\t<plan>");
-        for (int edge : agent.plan()) {
-            writer.print(String.format("%d ", edge));   
+        for (Agent agent : agents) {
+            writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
+                agent.id(), agent.linkFinishTime(), agent.planIndex()));
+            writer.print("\t<plan>");
+            for (int edge : agent.plan()) {
+                writer.print(String.format("%d ", edge));   
+            }
+            writer.println("</plan>");
+            writer.println("</agent>");
         }
-        writer.println("</plan>");
-        writer.println("</agent>");
         writer.close();
     }
 }

@@ -1,11 +1,6 @@
 package ch.ethz.systems.nqsim2;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 public class Realm implements Serializable {
 
@@ -16,43 +11,18 @@ public class Realm implements Serializable {
     // Note 1: that outgoing are onwer by the source realm. 
     // Note 2: the id of the link is its index in the array.
     private final LinkInternal[] links;
-    // Array of internal links onwer by this realm. Does not include outgoing
-    // links owned by this realm.
-    private final LinkInternal[] internalLinks;
     // A LinkBoundary is either an incomming or outgoing link. Each boundary
     // link contains the id of the link in the source realm. These are used to
     // regulate the communication between realms.
-    private final LinkBoundary[] inLinks;
-    private final LinkBoundary[] outLinks;
+    private final LinkInternal[] inLinks;
     // Current timestamp
     private int secs;
     private int routed;
 
-    public Realm(int id, LinkInternal[] links, LinkBoundary[] inLinks, 
-            LinkBoundary[] outLinks) throws Exception {
+    public Realm(int id, LinkInternal[] links, LinkInternal[] inLinks) throws Exception {
         this.id = id;
         this.links = links;
         this.inLinks = inLinks;
-        this.outLinks = outLinks;
-        this.internalLinks = setupInternalLinks();
-    }
-
-    private LinkInternal[] setupInternalLinks() {
-        Set<Integer> outLinkIds = new HashSet<>(outLinks.length);
-        LinkInternal[] internalLinks = new LinkInternal[links.length - outLinks.length];
-        int idx = 0;
-
-        for (LinkBoundary lb: outLinks) {
-            outLinkIds.add(lb.id());
-        }
-
-        for (int i = 0; i < links.length; i++) {
-            if (!outLinkIds.contains(i)) {
-                internalLinks[idx++] = links[i];
-            }
-        }
-
-        return internalLinks;
     }
 
     protected boolean processAgent(Agent agent) {
@@ -65,103 +35,47 @@ public class Realm implements Serializable {
         } else {
             return false;
         }
-
     }
 
-    protected void processInternalLinks() {
-        for (LinkInternal link : internalLinks) {
-            if (link.nexttime() > 0 && secs >= link.nexttime()) {
-                Agent agent = link.queue().peek();
-                while (agent.linkFinishTime <= secs) {
-                    if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
-                        link.pop();
-                        routed++;
-                        if ((agent = link.queue().peek()) == null) {
-                            break;
-                        }
-                    } else {
+    protected void processInternalLinks(LinkInternal link) {
+        if (link.nexttime() > 0 && secs >= link.nexttime()) {
+            Agent agent = link.queue().peek();
+            while (agent.linkFinishTime <= secs) {
+                if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
+                    link.pop();
+                    routed++;
+                    if ((agent = link.queue().peek()) == null) {
                         break;
                     }
-                }
-                link.nexttime(agent == null ? 0 : agent.linkFinishTime);
-            }
-        }
-    }
-
-    protected Map<LinkBoundary, ArrayList<Agent>> processOutgoingLinks() {
-        Map<LinkBoundary, ArrayList<Agent>> outAgentsByBoundary = new HashMap<>();
-        for (LinkBoundary blink : outLinks) {
-            LinkInternal ilink = links[blink.id()];
-            ArrayList<Agent> outgoing = new ArrayList<>();
-            for (Agent agent : ilink.queue()) {
-                if (agent.linkFinishTime > secs) {
-                    break;
-                } else {
-                    outgoing.add(agent);
-                }
-            }
-            outAgentsByBoundary.put(blink, outgoing);
-        }
-        return outAgentsByBoundary;
-    }
-
-    protected Map<Integer, Integer> processIngoingLinks(Map<Integer, ArrayList<Agent>> inAgentsByLinkId) {
-        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
-        for (Map.Entry<Integer, ArrayList<Agent>> entry : inAgentsByLinkId.entrySet()) {
-            int localrouted = 0;
-            for (Agent agent : entry.getValue()) {
-                if (agent.planIndex == (agent.plan.length - 1) || processAgent(agent)) {
-                    localrouted++;
-                    routed++;
                 } else {
                     break;
                 }
             }
-            routedAgentsByLinkId.put(entry.getKey(), localrouted);
-        }
-        return routedAgentsByLinkId;
-    }
-
-    protected void processRemotellyRoutedAgents(Map<Integer, Integer> routedAgentsByLinkId) {
-        for (Integer linkid : routedAgentsByLinkId.keySet()) {
-            int counter = routedAgentsByLinkId.get(linkid);
-            for (int i = 0; i < counter; i++) {
-                links[linkid].pop();
-            }
+            link.nexttime(agent == null ? 0 : agent.linkFinishTime);
         }
     }
 
     // Updates all links and agents. Returns the number of routed agents.
-    public int tick(int delta, Communicator comm) throws Exception {
-        Map<Integer, Integer> routedAgentsByLinkId = new HashMap<>();
+    public int tick(int delta) throws Exception {
         long start, frouting, fcomm;
         routed = 0;
         secs += delta;
         start = System.currentTimeMillis();
 
         // Process internal links.
-        processInternalLinks();
+        for (LinkInternal link : links) {
+            processInternalLinks(link);
+        }
 
+        WorldSimulator.barrier(secs, id);
         frouting = System.currentTimeMillis();
 
-        // Send outgoing agents.
-        comm.sendAgents(processOutgoingLinks());
+        // Process incomming links.
+        for (LinkInternal link : inLinks) {
+            processInternalLinks(link);
+        }
 
-        // Receive incomming agents.
-        routedAgentsByLinkId = processIngoingLinks(comm.receiveAgents());
-
-        // Wait for all sends to be complete.
-        comm.waitSends();
-
-        // Send locally rounted agents counters.
-        comm.sendRoutedCounters(routedAgentsByLinkId);
-
-        // Receive number of agents routed remotelly.
-        processRemotellyRoutedAgents(comm.receiveRoutedCounters());
-
-        // Wait for all sends to be complete.
-        comm.waitSends();
-
+        WorldSimulator.barrier(secs, id);
         fcomm = System.currentTimeMillis();
 
         WorldSimulator.log(secs, id, String.format(
@@ -185,11 +99,8 @@ public class Realm implements Serializable {
         return this.links;
     }
 
-    public LinkBoundary[] inLinks() {
+    public LinkInternal[] inLinks() {
         return this.inLinks;
     }
     
-    public LinkBoundary[] outLinks() {
-        return this.outLinks;
-    }
 }
