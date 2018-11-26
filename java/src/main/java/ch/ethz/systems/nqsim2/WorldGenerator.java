@@ -3,6 +3,7 @@ package ch.ethz.systems.nqsim2;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public abstract class WorldGenerator {
 
@@ -53,6 +54,7 @@ public abstract class WorldGenerator {
     private ArrayList<Realm> realms;
     // Array of agents (indexed by agent id).
     private ArrayList<Agent> agents;
+    private Random rand;
 
     // Should be implemented by specific world generators.
     public abstract void setupGraph();
@@ -83,6 +85,7 @@ public abstract class WorldGenerator {
         ArrayList<ArrayList<LinkBoundary>> localOutLinks = new ArrayList<>(numRealms);
         edgeId2LinkId = new ArrayList<>(edges.size());
         globalIdByLink = new HashMap<>();
+        rand = new Random(0);
 
         // Initialize data structures for each Realm.
         for (int i = 0; i < numRealms; i++) {
@@ -106,10 +109,15 @@ public abstract class WorldGenerator {
             // Id of the Link inside the Realm.
             int id = localCounters.get(fromRealm);
 
-            // Number of slots in the Link.
-            int capacity = 128; // TODO - get real number for this.
-
-            LinkInternal link = new LinkInternal(capacity);
+            LinkInternal link = new LinkInternal(
+                // Number of slots in the Link.
+                128,
+                // len (=1000 m) / Max(5, 60) -> 16
+                16,
+                // Random speed between 20 Km/h and 100 Km/h
+                3600 / Math.max(rand.nextInt(100), 40),
+                // len (=1000 m) / 5 -> 200 secs
+                200);
 
             // Saving the convertion between a global id and a local id.
             edgeId2LinkId.add(i, id);

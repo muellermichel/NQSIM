@@ -3,7 +3,6 @@ package ch.ethz.systems.nqsim2;
 import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.Random;
 
 public class LinkInternal implements Serializable {
     private static final long serialVersionUID = 221067454362884616L;
@@ -20,16 +19,11 @@ public class LinkInternal implements Serializable {
     // Basically queue.capacity - queue.size
     private int currentCapacity;
 
-    public LinkInternal(int capacity) {
+    public LinkInternal(int capacity, int free_capacity, int free_time, int jam_time) {
         this.queue = new ArrayDeque<>(capacity);
-        // len (=1000 m) / Max(5, 60) -> 16
-        this.free_capacity = 16;
-        // len (=1000 m) / vel (= 60 Km/h) -> 60 secs
-        //this.free_time = 60;
-        // Random speed between 20 Km/h and 100 Km/h
-        this.free_time = 3600 / Math.max(new Random().nextInt(100), 40);
-        // len (=1000 m) / 5 -> 200 secs
-        this.jam_time = 200;
+        this.free_capacity = free_capacity;
+        this.free_time = free_time;
+        this.jam_time = jam_time;
         this.currentCapacity = capacity;
     }
 
