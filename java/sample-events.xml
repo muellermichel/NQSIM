@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<events version="1.0">
+	<event time="0.0" type="actend" person="94286501" link="61311" actType="home_84600.0"  />
+	<event time="0.0" type="departure" person="94286501" link="61311" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="94082201" link="157030" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="94082201" link="157030" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="86632401" link="23831" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="86632401" link="23831" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="8432201" link="49662" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="8432201" link="49662" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="75142401" link="139127" actType="home_94200.0"  />
+	<event time="0.0" type="departure" person="75142401" link="139127" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="7010101" link="113914" actType="home_93000.0"  />
+	<event time="0.0" type="departure" person="7010101" link="113914" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="60229701" link="116331" actType="home_91200.0"  />
+	<event time="0.0" type="departure" person="60229701" link="116331" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="463737401" link="74568" actType="home_95400.0"  />
+	<event time="0.0" type="departure" person="463737401" link="74568" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="458575801" link="31754" actType="home_91200.0"  />
+	<event time="0.0" type="departure" person="458575801" link="31754" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="456294701" link="60823" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="456294701" link="60823" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="428675501" link="127684" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="428675501" link="127684" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="409305101" link="136639" actType="home_96000.0"  />
+	<event time="0.0" type="departure" person="409305101" link="136639" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="405057801" link="45422" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="405057801" link="45422" legMode="walk"  />
+	<event time="0.0" type="actend" person="40257701" link="72552" actType="home_91200.0"  />
+	<event time="0.0" type="departure" person="40257701" link="72552" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="402568401" link="86907" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="402568401" link="86907" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="392288801" link="144935" actType="home_93000.0"  />
+	<event time="0.0" type="departure" person="392288801" link="144935" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="388930201" link="60040" actType="home_94200.0"  />
+	<event time="0.0" type="departure" person="388930201" link="60040" legMode="bicycle"  />
+	<event time="0.0" type="actend" person="326431101" link="160693" actType="home_94800.0"  />
+	<event time="0.0" type="departure" person="326431101" link="160693" legMode="walk"  />
+	<event time="0.0" type="actend" person="30158901" link="1289" actType="home_93600.0"  />
+	<event time="0.0" type="departure" person="30158901" link="1289" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="204354001" link="127287" actType="home_88200.0"  />
+	<event time="0.0" type="departure" person="204354001" link="127287" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="19400501" link="129624" actType="home_91200.0"  />
+	<event time="0.0" type="departure" person="19400501" link="129624" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="154916301" link="104744" actType="home_89400.0"  />
+	<event time="0.0" type="departure" person="154916301" link="104744" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="151531901" link="81957" actType="home_96000.0"  />
+	<event time="0.0" type="departure" person="151531901" link="81957" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="134246701" link="142303" actType="home_94200.0"  />
+	<event time="0.0" type="departure" person="134246701" link="142303" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="129411701" link="38215" actType="home_96000.0"  />
+	<event time="0.0" type="departure" person="129411701" link="38215" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="123100401" link="88125" actType="home_91800.0"  />
+	<event time="0.0" type="departure" person="123100401" link="88125" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="122235901" link="120623" actType="home_93000.0"  />
+	<event time="0.0" type="departure" person="122235901" link="120623" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="120394101" link="29554" actType="home_87000.0"  />
+	<event time="0.0" type="departure" person="120394101" link="29554" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="119458601" link="160551" actType="home_93000.0"  />
+	<event time="0.0" type="departure" person="119458601" link="160551" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="118644501" link="97900" actType="home_91200.0"  />
+	<event time="0.0" type="departure" person="118644501" link="97900" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="113291001" link="60409" actType="home_93600.0"  />
+	<event time="0.0" type="departure" person="113291001" link="60409" legMode="access_walk"  />
+	<event time="0.0" type="actend" person="106423901" link="20407" actType="home_94200.0"  />
+	<event time="0.0" type="departure" person="106423901" link="20407" legMode="walk"  />
+	<event time="7.0" type="travelled" person="428675501" distance="15.414832191639576"  />
+	<event time="7.0" type="arrival" person="428675501" link="127684" legMode="access_walk"  />
+	<event time="7.0" type="actstart" person="428675501" link="127684" actType="car interaction"  />
+	<event time="7.0" type="actend" person="428675501" link="127684" actType="car interaction"  />
+	<event time="7.0" type="departure" person="428675501" link="127684" legMode="car"  />
+	<event time="7.0" type="PersonEntersVehicle" person="428675501" vehicle="428675501"  />
+	<event time="8.0" type="vehicle enters traffic" person="428675501" link="127684" vehicle="428675501" networkMode="car" relativePosition="1.0"  />
+	<event time="9.0" type="left link" vehicle="428675501" link="127684"  />
+	<event time="9.0" type="entered link" vehicle="428675501" link="120917"  />
+	<event time="17.0" type="travelled" person="86632401" distance="35.23117973176385"  />
+	<event time="17.0" type="arrival" person="86632401" link="23831" legMode="access_walk"  />
+	<event time="17.0" type="actstart" person="86632401" link="23831" actType="car interaction"  />
+	<event time="17.0" type="actend" person="86632401" link="23831" actType="car interaction"  />
+	<event time="17.0" type="departure" person="86632401" link="23831" legMode="car"  />
+	<event time="17.0" type="PersonEntersVehicle" person="86632401" vehicle="86632401"  />
+	<event time="18.0" type="vehicle enters traffic" person="86632401" link="23831" vehicle="86632401" networkMode="car" relativePosition="1.0"  />
+	<event time="19.0" type="left link" vehicle="86632401" link="23831"  />
+	<event time="19.0" type="entered link" vehicle="86632401" link="23832"  />
+	<event time="21.0" type="travelled" person="392288801" distance="43.648917490570184"  />
+	<event time="21.0" type="arrival" person="392288801" link="144935" legMode="access_walk"  />
+	<event time="21.0" type="actstart" person="392288801" link="144935" actType="car interaction"  />
+	<event time="21.0" type="actend" person="392288801" link="144935" actType="car interaction"  />
+	<event time="21.0" type="departure" person="392288801" link="144935" legMode="car"  />
+	<event time="21.0" type="PersonEntersVehicle" person="392288801" vehicle="392288801"  />
+	<event time="22.0" type="vehicle enters traffic" person="392288801" link="144935" vehicle="392288801" networkMode="car" relativePosition="1.0"  />
+	<event time="22.0" type="travelled" person="456294701" distance="44.08543582229727"  />
+	<event time="22.0" type="arrival" person="456294701" link="60823" legMode="access_walk"  />
+	<event time="22.0" type="actstart" person="456294701" link="60823" actType="car interaction"  />
+	<event time="22.0" type="actend" person="456294701" link="60823" actType="car interaction"  />
+	<event time="22.0" type="departure" person="456294701" link="60823" legMode="car"  />
+	<event time="22.0" type="PersonEntersVehicle" person="456294701" vehicle="456294701"  />
+	<event time="23.0" type="left link" vehicle="392288801" link="144935"  />
+	<event time="23.0" type="entered link" vehicle="392288801" link="144936"  />
+	<event time="23.0" type="vehicle enters traffic" person="456294701" link="60823" vehicle="456294701" networkMode="car" relativePosition="1.0"  />
+</events>

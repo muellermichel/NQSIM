@@ -11,3 +11,6 @@ sync_with_fdr.sh
 openmpi.jar
 output*.txt
 eventlog*.txt
+data
+berlin-*
+sample-events-output*
