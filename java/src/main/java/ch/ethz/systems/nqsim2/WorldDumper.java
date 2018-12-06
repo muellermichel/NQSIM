@@ -42,9 +42,8 @@ public class WorldDumper {
     }
 
     public static void dumpInternalLink(PrintWriter writer, int id, LinkInternal link) {
-        writer.println(String.format("\t\t<ilink id=%d nextTime=%d free_capacity=%d free_time=%d jam_time=%d currentCapacity=%d>",
-            id, link.nexttime(), link.freeCapacity(), link.freeTime(), link.jamTime(), 
-            link.currentCapacity()));
+        writer.println(String.format("\t\t<ilink id=%d nextTime=%d timeToPass=%d currentCapacity=%d>",
+            id, link.nexttime(), link.timeToPass(), link.currentCapacity()));
         writer.print("\t\t\t<agents>");
         for (Agent a : link.queue()) {
             writer.print(String.format("%d ", a.id()));   
@@ -65,8 +64,8 @@ public class WorldDumper {
         writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
             agent.id(), agent.linkFinishTime(), agent.planIndex()));
         writer.print("\t<plan>");
-        for (int edge : agent.plan()) {
-            writer.print(String.format("%d ", edge));   
+        for (long edge : agent.plan()) {
+            writer.print(String.format("%d ", Agent.getPlanElement(edge)));   
         }
         writer.println("</plan>");
         writer.println("</agent>");

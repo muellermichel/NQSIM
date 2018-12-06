@@ -111,13 +111,11 @@ public abstract class WorldGenerator {
 
             LinkInternal link = new LinkInternal(
                 // Number of slots in the Link.
-                128,
-                // len (=1000 m) / Max(5, 60) -> 16
-                16,
-                // Random speed between 20 Km/h and 100 Km/h
-                3600 / Math.max(rand.nextInt(100), 40),
-                // len (=1000 m) / 5 -> 200 secs
-                200);
+                32,
+                // Link with 1km
+                1000,
+                // Random speed between 20 Km/h (5 m/s) and 100 Km/h (27 m/s)
+                Math.max(rand.nextInt(100), 40) / 3600);
 
             // Saving the convertion between a global id and a local id.
             edgeId2LinkId.add(i, id);
@@ -157,7 +155,7 @@ public abstract class WorldGenerator {
         ArrayList<Agent> agents = new ArrayList<>(plans.size());
         // Convert plan, from edge id to link ids.
         for (int i = 0; i < plans.size(); i++) {
-            int[] plan = new int[plans.get(i).size()];
+            long[] plan = new long[plans.get(i).size()];
             for (int j = 0; j < plans.get(i).size(); j++) {
                 plan[j] = edgeId2LinkId.get(plans.get(i).get(j).id);
             }

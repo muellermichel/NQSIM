@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Realm implements Serializable {
-
     private static final long serialVersionUID = -4933703718837514089L;
+
     // Identifier of the realm.
     private final int id;
     // Array of links onwer by this realm. 
@@ -24,6 +24,12 @@ public class Realm implements Serializable {
     // regulate the communication between realms.
     private final LinkBoundary[] inLinks;
     private final LinkBoundary[] outLinks;
+    // Agents on hold until a specific timestamp (in seconds).
+    private final ArrayList<ArrayList<Agent>> delayedAgentsByWakeupTime;
+    // Agents on hold waiting for a vehicle to arrive.
+    // agentsInStops.get(route id).get(local stop id) -> arary of agents
+    private final ArrayList<ArrayList<ArrayList<Agent>>> agentsInStops;
+
     // Current timestamp
     private int secs;
     private int routed;
@@ -35,6 +41,9 @@ public class Realm implements Serializable {
         this.inLinks = inLinks;
         this.outLinks = outLinks;
         this.internalLinks = setupInternalLinks();
+        // TODO - we are making a strong assumption here (simulation duration < 1 day).
+        this.delayedAgentsByWakeupTime = new ArrayList<>(60 * 60 * 24);
+        this.agentsInStops = new ArrayList<>();
     }
 
     private LinkInternal[] setupInternalLinks() {
@@ -55,8 +64,17 @@ public class Realm implements Serializable {
         return internalLinks;
     }
 
-    protected boolean processAgent(Agent agent) {
-        LinkInternal next = links[agent.plan[agent.planIndex + 1]];
+    private ArrayList<Agent> getDelayedAgents(int wakeupTime) {
+        ArrayList<Agent> act = delayedAgentsByWakeupTime.get(wakeupTime);
+        if (act == null) {
+            act = new ArrayList<>();
+            delayedAgentsByWakeupTime.set(wakeupTime, act);
+        }  
+        return act;
+    }
+
+    protected boolean processAgentLink(Agent agent, int linkid) {
+        LinkInternal next = links[linkid];
         if (next.push(secs, agent)) {
             agent.planIndex++;
             assert(WorldSimulator.log(secs, id, String.format("-> %d agent %d", 
@@ -65,7 +83,91 @@ public class Realm implements Serializable {
         } else {
             return false;
         }
+    }
 
+    protected boolean processAgentSleepFor(Agent agent, int sleep) {
+        return processAgentSleepUntil(agent, secs + sleep);
+    }
+    
+    protected boolean processAgentSleepUntil(Agent agent, int sleep) {
+        getDelayedAgents(sleep).add(agent);
+        agent.planIndex++;
+        return true;
+    }
+
+    protected boolean processAgentAccess(Agent agent, int routestop) {
+        int routeid = Agent.getRoutePlanElement(routestop);
+        int stopid = Agent.getStopPlanElement(routestop);
+        agentsInStops.ensureCapacity(routeid - 1);
+        ArrayList<ArrayList<Agent>> route = agentsInStops.get(routeid);
+        if (route == null) {
+            route = new ArrayList<>();
+            agentsInStops.set(routeid, route);
+        }
+        route.ensureCapacity(stopid - 1);
+        ArrayList<Agent> stop = route.get(stopid);
+        if (stop == null) {
+            stop = new ArrayList<>();
+            route.set(stopid, stop);
+        }
+        stop.add(agent);
+        return true;
+    }
+
+    protected boolean processAgentStop(Agent agent, int stopid) {
+        int routeid = agent.route;
+        for (Agent out : agent.egress(stopid)) {
+            out.planIndex++;
+            getDelayedAgents(secs + 1).add(out);
+        }
+        if (agentsInStops.size() <= routeid) {
+            return true;
+        }
+        ArrayList<ArrayList<Agent>> route = agentsInStops.get(routeid);
+        if (route == null) {
+            return true;
+        }
+        if (route.size() <= stopid) {
+            return true;
+        }
+        ArrayList<Agent> stop = route.get(stopid);
+        if (stop == null) {
+            return true;
+        }
+        for (Agent in : stop) {
+            if (!agent.access(stopid, in)) {
+                break;
+            }
+            in.planIndex++;
+        }
+        return true;
+    }
+
+    protected boolean processAgent(Agent agent) {
+        int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
+        int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);
+        switch (type) {
+            case Agent.LinkType:        return processAgentLink(agent, element);
+            case Agent.SleepForType:    return processAgentSleepFor(agent, element);
+            case Agent.SleepUntilType:  return processAgentSleepUntil(agent, element);
+            case Agent.AccessType:      return processAgentAccess(agent, element);
+            case Agent.StopType:        return processAgentStop(agent, element);
+            case Agent.EgressType:
+            default:
+                assert(WorldSimulator.log(
+                    secs, id, String.format("ERROR -> unknow plan element type %d",type)));
+        }
+        return false;
+
+    }
+
+    protected void processAgentActivities() {
+        ArrayList<Agent> next = getDelayedAgents(secs + 1);
+        for (Agent agent : getDelayedAgents(secs)) {
+            if (!processAgent(agent)) {
+                next.add(agent);
+            }
+        }
     }
 
     protected void processInternalLinks() {
@@ -139,6 +241,9 @@ public class Realm implements Serializable {
         secs += delta;
         start = System.currentTimeMillis();
 
+        // Process agents waiting for something.
+        processAgentActivities();
+
         // Process internal links.
         processInternalLinks();
 
@@ -173,23 +278,9 @@ public class Realm implements Serializable {
         return routed;
     }
 
-    public int time() {
-        return this.secs;
-    }
-
-    public int id() {
-        return this.id;
-    }
-
-    public LinkInternal[] links() {
-        return this.links;
-    }
-
-    public LinkBoundary[] inLinks() {
-        return this.inLinks;
-    }
-    
-    public LinkBoundary[] outLinks() {
-        return this.outLinks;
-    }
+    public int time() { return this.secs; }
+    public int id() { return this.id; }
+    public LinkInternal[] links() { return this.links; }
+    public LinkBoundary[] inLinks() { return this.inLinks; }
+    public LinkBoundary[] outLinks() { return this.outLinks; }
 }

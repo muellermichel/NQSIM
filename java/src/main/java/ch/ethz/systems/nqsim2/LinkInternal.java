@@ -10,28 +10,26 @@ public class LinkInternal implements Serializable {
     private int nextTime;
     // Queue of agents on this link.
     private final Queue<Agent> queue;
-    // Maximum number of agents on the link to be considered free.
-    private final int free_capacity;
-    // Time it takes to pass the link under free capacity.
-    private final int free_time;
-    // Time it takes to pass the link under jam capacity.
-    private final int jam_time;
-    // Basically queue.capacity - queue.size
+    // Time to traverse the link.
+    private final int timeToPass;
+    // Number of free slots in the queue.
     private int currentCapacity;
 
-    public LinkInternal(int capacity, int free_capacity, int free_time, int jam_time) {
+    // TODO - add waiting center to wait for a specific route!
+    // Note: length in meters; speed in m/s
+    public LinkInternal(int capacity, int length, int speed) {
         this.queue = new ArrayDeque<>(capacity);
-        this.free_capacity = free_capacity;
-        this.free_time = free_time;
-        this.jam_time = jam_time;
+        this.timeToPass = length / speed;
         this.currentCapacity = capacity;
     }
 
     protected int timeToPass() {
-        return currentCapacity > free_capacity ? free_time : jam_time;
+        return timeToPass;
     }
 
+    // TODO - have a push_wait (waits for a vehicle)
     public boolean push(int time, Agent agent) {
+        // TODO - check for agents waiting to get into the route!
         if (currentCapacity > 0) { 
             queue.add(agent);
             currentCapacity--;
@@ -54,18 +52,6 @@ public class LinkInternal implements Serializable {
 
     public int nexttime (int nexttime) {
         return this.nextTime = nexttime;
-    }
-
-    public int freeCapacity() {
-        return this.free_capacity;
-    }
-
-    public int freeTime() {
-        return this.free_time;
-    }
-
-    public int jamTime() {
-        return this.jam_time;
     }
 
     public int currentCapacity() {
