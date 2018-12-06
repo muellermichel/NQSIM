@@ -22,8 +22,15 @@ class EventValidator {
                 event.time,
                 k -> new HashMap<>()
             );
+            String agentIdentifier = event.person;
+            if (agentIdentifier == null) {
+                agentIdentifier = event.vehicle;
+            }
+            if (agentIdentifier == null) {
+                agentIdentifier = event.driverId;
+            }
             Map<String, StringlyEvent> eventMapForTimeAndPerson = eventMapForTime.computeIfAbsent(
-                event.person,
+                agentIdentifier,
                 k -> new HashMap<>()
             );
             if (eventMapForTimeAndPerson.containsKey(event.type)) {

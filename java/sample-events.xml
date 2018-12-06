@@ -98,4 +98,24 @@
 	<event time="23.0" type="left link" vehicle="392288801" link="144935"  />
 	<event time="23.0" type="entered link" vehicle="392288801" link="144936"  />
 	<event time="23.0" type="vehicle enters traffic" person="456294701" link="60823" vehicle="456294701" networkMode="car" relativePosition="1.0"  />
+	<event time="180.0" type="VehicleArrivesAtFacility" vehicle="tr_49303" facility="000008010018" delay="0.0"  />
+    <event time="180.0" type="VehicleDepartsAtFacility" vehicle="tr_49303" facility="000008010018" delay="0.0"  />
+    <event time="180.0" type="VehicleArrivesAtFacility" vehicle="tr_3859" facility="450009320239" delay="0.0"  />
+    <event time="180.0" type="VehicleDepartsAtFacility" vehicle="tr_3859" facility="450009320239" delay="0.0"  />
+    <event time="225.0" type="VehicleArrivesAtFacility" vehicle="tr_3859" facility="450009320249" delay="-15.0"  />
+    <event time="225.0" type="VehicleDepartsAtFacility" vehicle="tr_3859" facility="450009320249" delay="-15.0"  />
+    <event time="303.0" type="VehicleArrivesAtFacility" vehicle="tr_3859" facility="450009320248" delay="-57.0"  />
+    <event time="303.0" type="VehicleDepartsAtFacility" vehicle="tr_3859" facility="450009320248" delay="-57.0"  />
+    <event time="352.0" type="VehicleArrivesAtFacility" vehicle="tr_3859" facility="450009320241" delay="-68.0"  />
+    <event time="352.0" type="VehicleDepartsAtFacility" vehicle="tr_3859" facility="450009320241" delay="-68.0"  />
+	<event time="840.0" type="TransitDriverStarts" driverId="pt_tr_56805_defaultTransitVehicleType" vehicleId="tr_56805" transitLineId="19040_100" transitRouteId="19040_100_4" departureId="87818584"  />
+    <event time="900.0" type="TransitDriverStarts" driverId="pt_tr_57232_defaultTransitVehicleType" vehicleId="tr_57232" transitLineId="19049_100" transitRouteId="19049_100_17" departureId="87820861"  />
+    <event time="900.0" type="TransitDriverStarts" driverId="pt_tr_10247_defaultTransitVehicleType" vehicleId="tr_10247" transitLineId="16744_700" transitRouteId="16744_700_3" departureId="84263748"  />
+    <event time="1320.0" type="TransitDriverStarts" driverId="pt_tr_50357_defaultTransitVehicleType" vehicleId="tr_50357" transitLineId="17890_700" transitRouteId="17890_700_5" departureId="83961381"  />
+    <event time="1500.0" type="TransitDriverStarts" driverId="pt_tr_49339_defaultTransitVehicleType" vehicleId="tr_49339" transitLineId="17607_700" transitRouteId="17607_700_11" departureId="87825101"  />
+	<event time="10786.0" type="waitingForPt" agent="216791801" atStop="070101001385" destinationStop="070101001403"  />
+    <event time="11707.0" type="waitingForPt" agent="227584901" atStop="070101007267" destinationStop="070101006963"  />
+    <event time="11769.0" type="waitingForPt" agent="189988901" atStop="070101003644" destinationStop="070101000847.2"  />
+    <event time="11796.0" type="waitingForPt" agent="330294501" atStop="070101000356.1" destinationStop="070101000871.2"  />
+
 </events>
