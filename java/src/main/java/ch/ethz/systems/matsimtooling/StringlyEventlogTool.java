@@ -6,22 +6,18 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-class EventValidator {
-    private Map<String, Map<String, Map<String, StringlyEvent>>> eventMap;
 
-    EventValidator(StringlyEvents events) {
-        this.eventMap = new HashMap<>();
+
+class EventValidator {
+    private Map<String, List<StringlyEvent>> eventsByPerson;
+
+    EventValidator(StringlyEvents events) throws ValidationException {
+        this.eventsByPerson = new HashMap<>();
         for (StringlyEvent event:events.events) {
-            Map<String, Map<String, StringlyEvent>> eventMapForTime = eventMap.computeIfAbsent(
-                event.time,
-                k -> new HashMap<>()
-            );
+
             String agentIdentifier = event.person;
             if (agentIdentifier == null) {
                 agentIdentifier = event.vehicle;
@@ -29,84 +25,48 @@ class EventValidator {
             if (agentIdentifier == null) {
                 agentIdentifier = event.driverId;
             }
-            Map<String, StringlyEvent> eventMapForTimeAndPerson = eventMapForTime.computeIfAbsent(
-                agentIdentifier,
-                k -> new HashMap<>()
-            );
-            if (eventMapForTimeAndPerson.containsKey(event.type)) {
-                throw new RuntimeException(String.format(
-                    "event with time %s x person %s x type %s is not unique",
-                    event.time,
-                    event.person,
-                    event.type
-                ));
+            if (agentIdentifier == null) {
+                agentIdentifier = event.agent;
             }
-            eventMapForTimeAndPerson.put(event.type, event);
+            if (agentIdentifier == null) {
+                throw new ValidationException("event cannot be represented as there is no agent identifier: " + event.toString());
+            }
+
+            List<StringlyEvent> eventsForPerson = eventsByPerson.computeIfAbsent(
+                agentIdentifier,
+                k -> new ArrayList<>()
+            );
+            eventsForPerson.add(event);
         }
     }
 
-    void validate(EventValidator reference) {
-        Set<String> remainingTimeSet = new HashSet<>();
-        remainingTimeSet.addAll(reference.eventMap.keySet());
-        for (Map.Entry<String, Map<String, Map<String, StringlyEvent>>> e:this.eventMap.entrySet()) {
-            String time = e.getKey();
-            if (!remainingTimeSet.remove(time)) {
-                throw new RuntimeException("no events found during time " + time + " in reference");
+    void validate(EventValidator reference, boolean exactTimingRequired) throws ValidationException {
+        for (Map.Entry<String, List<StringlyEvent>> e:this.eventsByPerson.entrySet()) {
+            String agentIdentifier = e.getKey();
+            List<StringlyEvent> events = e.getValue();
+            List<StringlyEvent> referenceEvents = reference.eventsByPerson.get(agentIdentifier);
+            if (referenceEvents == null) {
+                throw new ValidationException("no events found in reference for agent " + agentIdentifier);
             }
-            Map<String, Map<String, StringlyEvent>> eventMapForTime = e.getValue();
-            Map<String, Map<String, StringlyEvent>> refEventMapForTime = reference.eventMap.get(time);
-            Set<String> remainingPersonSet = new HashSet<>();
-            remainingPersonSet.addAll(refEventMapForTime.keySet());
-            for (Map.Entry<String, Map<String, StringlyEvent>> personEntry:eventMapForTime.entrySet()) {
-                String person = personEntry.getKey();
-                if (!remainingPersonSet.remove(person)) {
-                    throw new RuntimeException(String.format(
-                        "no events found in reference during time %s for person %s",
-                        time,
-                        person
-                    ));
-                }
-                Map<String, StringlyEvent> eventMapForTimeAndPerson = personEntry.getValue();
-                Map<String, StringlyEvent> refEventMapForTimeAndPerson = refEventMapForTime.get(person);
-                Set<String> remainingTypeSet = new HashSet<>();
-                remainingTypeSet.addAll(refEventMapForTimeAndPerson.keySet());
-                for (Map.Entry<String, StringlyEvent> typeEntry:eventMapForTimeAndPerson.entrySet()) {
-                    String type = typeEntry.getKey();
-                    if (!remainingTypeSet.remove(type)) {
-                        throw new RuntimeException(String.format(
-                            "no events found in reference during time %s for person %s and type %s",
-                            time,
-                            person,
-                            type
-                        ));
-                    }
-                    StringlyEvent event = typeEntry.getValue();
-                    StringlyEvent refEvent = refEventMapForTimeAndPerson.get(type);
-                    if (!event.equals(refEvent)) {
-                        throw new RuntimeException(event.toString() + " does not match " + refEvent.toString());
-                    }
-                }
-                if (!remainingTypeSet.isEmpty()) {
-                    throw new RuntimeException(String.format(
-                        "reference at time %s for person %s contains additional events of type %s",
-                        time,
-                        person,
-                        String.join(",", remainingTypeSet)
-                    ));
-                }
-            }
-            if (!remainingPersonSet.isEmpty()) {
-                throw new RuntimeException(String.format(
-                    "reference at time %s contains additional events for persons %s",
-                    time,
-                    String.join(",", remainingPersonSet)
+            if (referenceEvents.size() != events.size()) {
+                throw new ValidationException(String.format(
+                        "event list size (%d) does not match reference (%d) for agent %s",
+                        events.size(),
+                        referenceEvents.size(),
+                        agentIdentifier
                 ));
             }
-        }
-        if (!remainingTimeSet.isEmpty()) {
-            throw new RuntimeException(
-                "reference contains additional events in times " + String.join(",", remainingTimeSet)
-            );
+            for (int event_idx = 0; event_idx < events.size(); event_idx++) {
+                if (!events.get(event_idx).equals(referenceEvents.get(event_idx), exactTimingRequired)) {
+                    throw new ValidationException(String.format(
+                        "event %d for agent %s does not match reference:\n%s\nvs\n%s",
+                        event_idx,
+                        agentIdentifier,
+                        events.get(event_idx).toString(),
+                        referenceEvents.get(event_idx).toString()
+                    ));
+                }
+            }
         }
     }
 }
@@ -117,7 +77,8 @@ public final class StringlyEventlogTool {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try{
             IOUtils.copy(new GZIPInputStream(new ByteArrayInputStream(contentBytes)), out);
-        } catch(IOException e){
+        }
+        catch(IOException e){
             throw new RuntimeException(e);
         }
         return out.toByteArray();
@@ -132,7 +93,8 @@ public final class StringlyEventlogTool {
         StringlyEvents events;
         try {
             events = new XmlMapper().readValue(input, StringlyEvents.class);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
         return events;
@@ -141,7 +103,8 @@ public final class StringlyEventlogTool {
     public static StringlyEvents readGzipXMLFile(String filePath) {
         try {
             return readXML(decompress(IOUtils.toByteArray(new FileInputStream(new File(filePath)))));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -149,7 +112,8 @@ public final class StringlyEventlogTool {
     public static StringlyEvents readXMLFile(String filePath) {
         try {
             return readXML(IOUtils.toByteArray(new FileInputStream(new File(filePath))));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -159,13 +123,14 @@ public final class StringlyEventlogTool {
             XmlMapper mapper = new XmlMapper();
             mapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
             mapper.writeValue(new File(filePath), events);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-   public static void validate(StringlyEvents events, StringlyEvents refEvents) {
+   public static void validate(StringlyEvents events, StringlyEvents refEvents, boolean exactTimingRequired) throws ValidationException {
         EventValidator eventValidator = new EventValidator(events);
-        eventValidator.validate(new EventValidator(refEvents));
+        eventValidator.validate(new EventValidator(refEvents), exactTimingRequired);
    }
 }

@@ -63,7 +63,7 @@
 	<event time="0.0" type="actend" person="113291001" link="60409" actType="home_93600.0"  />
 	<event time="0.0" type="departure" person="113291001" link="60409" legMode="access_walk"  />
 	<event time="0.0" type="actend" person="106423901" link="20407" actType="home_94200.0"  />
-	<event time="0.0" type="departure" person="106423901" link="20407" legMode="walk"  />
+	<event time="1.0" type="departure" person="106423901" link="20407" legMode="walk"  />
 	<event time="7.0" type="travelled" person="428675501" distance="15.414832191639576"  />
 	<event time="7.0" type="arrival" person="428675501" link="127684" legMode="access_walk"  />
 	<event time="7.0" type="actstart" person="428675501" link="127684" actType="car interaction"  />

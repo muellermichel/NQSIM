@@ -74,9 +74,11 @@ public class StringlyEvent {
     @JacksonXmlProperty(isAttribute = true)
     public String destinationStop;
 
-    public boolean equals(StringlyEvent ref) {
-        return isEquivalent(time, ref.time)
-            && isEquivalent(type, ref.type)
+    public boolean equals(StringlyEvent ref, boolean exactTimeRequired) {
+        if (exactTimeRequired && !isEquivalent(time, ref.time)) {
+            return false;
+        }
+        return isEquivalent(type, ref.type)
             && isEquivalent(person, ref.person)
             && isEquivalent(link, ref.link)
             && isEquivalent(actType, ref.actType)

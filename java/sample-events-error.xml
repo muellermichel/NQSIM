@@ -55,7 +55,7 @@
 	<event time="0.0" type="actend" person="122235901" link="120623" actType="home_93000.0"  />
 	<event time="0.0" type="departure" person="122235901" link="120623" legMode="access_walk"  />
 	<event time="0.0" type="actend" person="120394101" link="29554" actType="home_87000.0"  />
-	<event time="0.0" type="departure" person="120394101" link="29554" legMode="access_walk"  />
+	<event time="0.0" type="departur" person="120394101" link="29554" legMode="access_walk"  />
 	<event time="0.0" type="actend" person="119458601" link="160551" actType="home_93000.0"  />
 	<event time="0.0" type="departure" person="119458601" link="160551" legMode="access_walk"  />
 	<event time="0.0" type="actend" person="118644501" link="97900" actType="home_91200.0"  />
