@@ -18,6 +18,7 @@ public final class Link {
     private int assigned_node_index;
     private byte assigned_incoming_link_idx;
     private int current_capacity;
+    public int sleep_till = -1;
     private Queue<Agent> q;
 
     private static long next_id = 0;

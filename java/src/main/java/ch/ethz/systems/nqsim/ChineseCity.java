@@ -61,7 +61,8 @@ public final class ChineseCity {
         });
     }
 
-    public ChineseCity(String input_file_path, Communicator communicator) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
+    public ChineseCity(String input_file_path, Communicator communicator, boolean verbose) throws ChineseCityException, MPIException, IOException, CommunicatorException, NodeException {
+        World.verbose = verbose;
         int my_rank = communicator.getMyRank();
         int num_ranks = communicator.getNumberOfRanks();
         int num_rank_rows = (int)Math.sqrt(num_ranks);
@@ -261,10 +262,10 @@ public final class ChineseCity {
         }
     }
 
-    public void initializeRandomAgents(int num_agents) throws MPIException, WorldException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
+    public void initializeRandomAgents(int num_agents, int min_plan_length) throws MPIException, WorldException, NodeException, LinkException, InterruptedException, ExceedingBufferException, CommunicatorException {
         if (this.world.communicator.getMyRank() == 0) {
             System.out.println("adding " + num_agents + " agents on rank 0");
-            this.complete_world.addRandomAgents(num_agents);
+            this.complete_world.addRandomAgents(num_agents, min_plan_length);
         }
         for (Node node : this.complete_world.getNodes()) {
             node.computeCapacities();
@@ -272,20 +273,20 @@ public final class ChineseCity {
         this.world.communicator.communicateAgents(world, this.complete_world, 0);
     }
 
-    public void run() throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException, IOException {
-        int sim_runtime = 3600;
-
+    public void run(int sim_runtime) throws WorldException, CommunicatorException, ExceedingBufferException, InterruptedException, MPIException, IOException {
         EventLog.clear();
         long start = System.currentTimeMillis();
         for (int time=0; time < sim_runtime; time += 1) {
             this.world.tick(1, this.complete_world);
         }
         long time = System.currentTimeMillis() - start;
-//        this.world.communicator.communicateEventLog();
-//        if (this.world.communicator.getMyRank() == 0) {
-//            EventLog.print_all();
-////            System.out.println(EventLog.toJson());
-//        }
+        if (World.verbose) {
+            this.world.communicator.communicateEventLog();
+            if (this.world.communicator.getMyRank() == 0) {
+                EventLog.print_all();
+                //            System.out.println(EventLog.toJson());
+            }
+        }
         System.out.println(String.format("rank %d: world finished with %d agents, %d routed, %6.4f%% nodes occupied avg. s/r %6.4f",
             this.world.communicator.getMyRank(),
             World.sumOverAllLinks(world, Link::queueLength),

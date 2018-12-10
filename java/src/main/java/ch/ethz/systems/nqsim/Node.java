@@ -177,28 +177,37 @@ public final class Node {
             if (link == null) {
                 break;
             }
+            if (link.sleep_till > t) {
+                continue;
+            }
             Agent current_agent = link.peek();
             try {
-                while (current_agent != null && t >= current_agent.time_to_pass_link) {
+                while (current_agent != null) {
+                    if (t < current_agent.time_to_pass_link) {
+                        link.sleep_till = current_agent.time_to_pass_link;
+                        break;
+                    }
                     byte next_link_idx = this.route_agent(current_agent, communicator, t);
                     if (next_link_idx == -2) {
                         break;
                     }
-//                    EventLog.log(
-//                        current_agent.getId(),
-//                        String.format(
-//                            "agent %s(lt:%d) has crossed over from link %s to %d(%s, ql=%d) (rank %d -> %d)",
+//                    if (World.verbose) {
+//                        EventLog.log(
 //                            current_agent.getId(),
-////                            current_agent.getPlan().toString(),
-//                            current_agent.time_to_pass_link,
-//                            link.getId(),
-//                            next_link_idx,
-//                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
-//                            (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).queueLength() : 0,
-//                            communicator.getMyRank(),
-//                            this.getOutgoingLink(next_link_idx).getAssignedRank()
-//                        )
-//                    );
+//                            String.format(
+//                                "agent %s(lt:%d) has crossed over from link %s to %d(%s, ql=%d) (rank %d -> %d)",
+//                                current_agent.getId(),
+//                                //                            current_agent.getPlan().toString(),
+//                                current_agent.time_to_pass_link,
+//                                link.getId(),
+//                                next_link_idx,
+//                                (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).getId() : "none",
+//                                (next_link_idx >= 0) ? this.getOutgoingLink(next_link_idx).queueLength() : 0,
+//                                communicator.getMyRank(),
+//                                this.getOutgoingLink(next_link_idx).getAssignedRank()
+//                            )
+//                        );
+//                    }
                     try {
                         link.removeFirstWaiting();
                     }

@@ -13,6 +13,21 @@ if [ "$2" != "" ]; then
 	nagents="$2"
 fi
 
+verbose="false"
+if [ "$3" != "" ]; then
+	verbose="$3"
+fi
+
+simtime="3600"
+if [ "$4" != "" ]; then
+	simtime="$4"
+fi
+
+min_plan_length="200"
+if [ "$5" != "" ]; then
+	min_plan_length="$5"
+fi
+
 hosts_option=""
 if [ "$HOSTS" != "" ] && [ -f $HOSTS ]; then
    echo "using ${HOSTS}:"
@@ -66,7 +81,7 @@ time mpirun \
 	java \
 		$jvm_opts \
 		-classpath $classpath \
-		ch.ethz.systems.nqsim.ChineseCityTest ${nagents} \
+		ch.ethz.systems.nqsim.ChineseCityTest ${nagents} ${verbose} ${simtime} ${min_plan_length} \
 	| tee output_${timestamp}_np${np}.txt \
 	&& :
 rv=$?

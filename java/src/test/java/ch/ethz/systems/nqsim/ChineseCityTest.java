@@ -13,7 +13,10 @@ public final class ChineseCityTest {
     public static Map<Integer, Map<String, List<String>>> getEventLogFromExperiment(
             int num_agents,
             int num_ranks,
-            Communicator communicator
+            Communicator communicator,
+            boolean verbose,
+            int simtime,
+            int min_plan_length
     ) throws CommunicatorException, NodeException, WorldException, InterruptedException, ExceedingBufferException, MPIException, LinkException, IOException, ChineseCityException {
         EventLog.clear();
         communicator.resetData();
@@ -22,17 +25,21 @@ public final class ChineseCityTest {
         communicator.num_ranks_override = num_ranks;
         if (communicator.getMyRank() == 0) {
             System.out.println(String.format(
-                    "==================== Chinese City @ %d ranks, %d agents ==========================",
-                    num_ranks,
-                    num_agents
+                "==================== Chinese City @ %d ranks, %d agents ==========================",
+                num_ranks,
+                num_agents
             ));
         }
-        ChineseCity chineseCity = new ChineseCity("chinese_capital_187x187.json", communicator);
+        ChineseCity chineseCity = new ChineseCity(
+            "chinese_capital_187x187.json",
+            communicator,
+            verbose
+        );
         if (chineseCity.world == null) {
             return null;
         }
-        chineseCity.initializeRandomAgents(num_agents);
-        chineseCity.run();
+        chineseCity.initializeRandomAgents(num_agents, min_plan_length);
+        chineseCity.run(simtime);
         return EventLog.getDataCopy();
     }
 
@@ -74,12 +81,15 @@ public final class ChineseCityTest {
         }
     }
 
-    public static void runReferenceTests(int num_agents, Communicator communicator) throws MPIException {
+    public static void runReferenceTests(int num_agents, Communicator communicator, boolean verbose, int simtime, int min_plan_length) throws MPIException {
         try {
             Map<Integer, Map<String, List<String>>> event_log = getEventLogFromExperiment(
                     num_agents,
                     communicator.getNumberOfRanks(),
-                    communicator
+                    communicator,
+                    verbose,
+                    simtime,
+                    min_plan_length
             );
 //            Map<Integer, Map<String, List<String>>> reference_event_log = getEventLogFromExperiment(
 //                num_agents,
@@ -132,15 +142,27 @@ public final class ChineseCityTest {
 
     public static void main(String[] args) throws MPIException {
         System.out.println("process started with args: " + Arrays.toString(args));
-        int final_num_agents = 4000;
+        int final_num_agents = 100;
         if (args.length > 0) {
             final_num_agents = Integer.valueOf(args[0]);
+        }
+        boolean verbose = true;
+        if (args.length > 1) {
+            verbose = Boolean.valueOf(args[1]);
+        }
+        int simtime = 600;
+        if (args.length > 2) {
+            simtime = Integer.valueOf(args[2]);
+        }
+        int min_plan_length = 20;
+        if (args.length > 3) {
+            min_plan_length = Integer.valueOf(args[3]);
         }
         Communicator communicator = new Communicator(args);
 //        if (2 <= final_num_agents) runReferenceTests(2, communicator);
 //        if (100 <= final_num_agents) runReferenceTests(100, communicator);
 //        if (final_num_agents != 2 && final_num_agents != 100) runReferenceTests(final_num_agents, communicator);
-        runReferenceTests(final_num_agents, communicator);
+        runReferenceTests(final_num_agents, communicator, verbose, simtime, min_plan_length);
         communicator.shutDown();
     }
 }
