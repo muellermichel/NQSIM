@@ -10,4 +10,6 @@ java.iml
 sync_with_fdr.sh
 openmpi.jar
 output*.txt
+output*.jvm
 eventlog*.txt
+editinfo
