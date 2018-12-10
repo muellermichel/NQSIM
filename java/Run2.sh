@@ -79,9 +79,12 @@ function generation {
     time java $jvm_opts -classpath $classpath $generator $generator_opts &> $nqsim_work/generator.log
 }
 
-function load_berlin {
-    generator=ch.ethz.systems.nqsim2.ScenarioDumper
-    generator_opts="/home/rbruno/git/matsim-berlin/scenarios/berlin-v5.1-1pct/input/berlin-v5.1-1pct-1it.config.xml"
+function load_scenario {
+    generator=ch.ethz.systems.nqsim2.ScenarioRunner
+#    config="/home/rbruno/git/matsim-berlin/scenarios/berlin-v5.1-1pct/input/berlin-v5.1-1pct-1it.config.xml"
+    config="/home/rbruno/git/matsim-berlin/scenarios/berlin-v5.1-10pct-1agent/input/berlin-v5.1-10pct-1agent.config.xml"
+    world="$nqsim_work/world"
+    generator_opts="$world $config"
     time java $jvm_opts -classpath $classpath $generator $generator_opts &> $nqsim_work/generator.log
 
 }
@@ -109,7 +112,7 @@ do
     rm -rf $nqsim_work &> /dev/null
     mkdir $nqsim_work &> /dev/null
     prepare_jvm_opts
-    load_berlin
+    load_scenario
 #    generation
 #    simulation
     echo "Running with $i realms...done!"

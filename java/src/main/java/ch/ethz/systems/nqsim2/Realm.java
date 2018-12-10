@@ -143,6 +143,7 @@ public class Realm implements Serializable {
         return true;
     }
 
+    // TODO - what about the set route?
     protected boolean processAgent(Agent agent) {
         int element = Agent.getPlanElement(agent.plan[agent.planIndex + 1]);
         int type = Agent.getPlanHeader(agent.plan[agent.planIndex + 1]);

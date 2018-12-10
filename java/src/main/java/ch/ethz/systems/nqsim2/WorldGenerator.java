@@ -173,6 +173,7 @@ public abstract class WorldGenerator {
         return agents;
     }
 
+    // TODO - pull this code into the sqware world generator.
     public World generateWorld(int numRealms) throws Exception {
         setupGraph();
         setupPlans();

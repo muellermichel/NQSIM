@@ -183,10 +183,16 @@ public class ScenarioImporter {
             }
         } else if (element instanceof Activity) {
             Activity activity = (Activity) element;
-            double time = Double.isFinite(activity.getMaximumDuration()) ?
-                    activity.getMaximumDuration() : 0;
-            // Add activity duration
-            flatplan.add(Agent.prepareSleepForElement((int)time));
+            if (Double.isFinite(activity.getEndTime())) {
+                double time = activity.getEndTime();
+                flatplan.add(Agent.prepareSleepUntilElement((int)time));
+            } else if (Double.isFinite(activity.getMaximumDuration())) {
+                double time = activity.getMaximumDuration();
+                flatplan.add(Agent.prepareSleepForElement((int)time));
+            } else {
+                return;
+            }
+            
         } else {
             throw new RuntimeException ("Unknown plan element " + element);
         }

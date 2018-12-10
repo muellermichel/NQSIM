@@ -10,9 +10,7 @@ public class WorldDumper {
         for (Realm realm : world.realms()) {
             dumpRealm(worldpath, realm);
         }
-        for (Agent agent : world.agents()) {
-            dumpAgent(worldpath, agent);
-        }
+        dumpAgents(worldpath, world.agents());
         System.out.println("Finished dumping world.");
         return true;
     }
@@ -57,18 +55,21 @@ public class WorldDumper {
                link.id(), link.fromrealm(), link.torealm()));
 
     }
-    
-    public static void dumpAgent(String worldpath, Agent agent) throws Exception {
+   
+    public static void dumpAgents(String worldpath, Agent[] agents) throws Exception {
         String filepath = String.format("%s-agents.xml", worldpath);
         PrintWriter writer = new PrintWriter(new FileWriter(filepath));
-        writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
-            agent.id(), agent.linkFinishTime(), agent.planIndex()));
-        writer.print("\t<plan>");
-        for (long edge : agent.plan()) {
-            writer.print(String.format("%d ", Agent.getPlanElement(edge)));   
+        for (Agent agent : agents) {
+            writer.println("<agent>");
+            writer.println(String.format("\t<agent id=%d linkFinishTime=%d planIndex=%d>",
+                agent.id(), agent.linkFinishTime(), agent.planIndex()));
+            writer.print("\t<plan>");
+            for (long edge : agent.plan()) {
+                writer.print(String.format("\n\t\t%s", Agent.toString(edge)));   
+            }
+            writer.println("\n\t</plan>");
+            writer.println("</agent>");
         }
-        writer.println("</plan>");
-        writer.println("</agent>");
         writer.close();
     }
 }

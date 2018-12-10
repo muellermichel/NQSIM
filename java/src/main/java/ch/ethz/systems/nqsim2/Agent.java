@@ -137,4 +137,29 @@ public class Agent implements Serializable {
         return (type << 32) | element;
     }
 
+    public static String toString(long planEntry) {
+        int element = Agent.getPlanElement(planEntry);
+        int type = Agent.getPlanHeader(planEntry);
+        switch (type) {
+            case Agent.LinkType:        
+                return String.format("type=link; link=%d", element);
+            case Agent.SleepForType:
+                return String.format("type=sleepfor; sleep=%d", element);
+            case Agent.SleepUntilType:
+                return String.format("type=sleepuntil; sleep=%d", element);
+            case Agent.AccessType:
+                return String.format("type=access; route=%d stopid=%d", 
+                    getRoutePlanElement(element), getStopPlanElement(element));
+            case Agent.StopType:
+                return String.format("type=stop; stopid=%d", element);
+            case Agent.EgressType:
+                return String.format("type=access; stopid=%d", element);
+            case Agent.RouteType:
+                return String.format("type=route; routeid=%d", element);
+            default:
+                return "unknow plan type!";
+        }
+
+    }
+
 }

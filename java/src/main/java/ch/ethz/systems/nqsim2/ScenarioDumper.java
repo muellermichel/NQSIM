@@ -1,8 +1,5 @@
 package ch.ethz.systems.nqsim2;
 
-import static org.matsim.core.config.groups.ControlerConfigGroup.RoutingAlgorithmType.FastAStarLandmarks;
-
-import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
@@ -14,13 +11,7 @@ import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.api.core.v01.population.Route;
-import org.matsim.core.config.Config;
-import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
-import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
-import org.matsim.core.controler.OutputDirectoryLogging;
 import org.matsim.core.population.routes.NetworkRoute;
-import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.facilities.ActivityFacilities;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.households.Household;
@@ -39,22 +30,7 @@ import org.matsim.vehicles.Vehicles;
 
 public class ScenarioDumper {
 
-	private static final Logger log = Logger.getLogger(ScenarioDumper.class);
-	private final String configFileName;
-	private Config config;
-    private Scenario scenario;
-	
-	public static void main(String[] args) throws Exception {
-        String configFileName = args[0];
-        ScenarioDumper bg = new ScenarioDumper(configFileName);
-        log.info( "config file: " + configFileName );
-        bg.config = bg.prepareConfig() ;
-        bg.scenario = ScenarioUtils.loadScenario(bg.config);
-        //dumpScenario(bg.scenario);
-        new ScenarioImporter(bg.scenario, 1).generate();
-    }
-    
-    private static void dumpScenario(Scenario scenario) {
+    public static void dumpScenario(Scenario scenario) {
         dumpNetwork(scenario.getNetwork());
         dumpLanes(scenario.getLanes());
         dumpVehicles(scenario.getVehicles());
@@ -204,55 +180,5 @@ public class ScenarioDumper {
             "Link (%s) %s", link.getClass().getName(), link));
     }
 	
-	ScenarioDumper( String configFileName) {
-		this.configFileName = configFileName;
-	}
-	
-	Config prepareConfig() {
-		OutputDirectoryLogging.catchLogEntries();
-		
-		config = ConfigUtils.loadConfig( configFileName ) ; // I need this to set the context
-		
-		config.controler().setRoutingAlgorithmType( FastAStarLandmarks );
-		
-		config.subtourModeChoice().setProbaForRandomSingleTripMode( 0.5 );
-		
-		// vsp defaults
-		config.plansCalcRoute().setInsertingAccessEgressWalk( true );
-		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
-		config.qsim().setTrafficDynamics( TrafficDynamics.kinematicWaves );
-		
-		for ( long ii = 600 ; ii <= 97200; ii+=600 ) {
-			final ActivityParams params = new ActivityParams( "home_" + ii + ".0" ) ;
-			params.setTypicalDuration( ii );
-			config.planCalcScore().addActivityParams( params );
-		}
-		for ( long ii = 600 ; ii <= 97200; ii+=600 ) {
-			final ActivityParams params = new ActivityParams( "work_" + ii + ".0" ) ;
-			params.setTypicalDuration( ii );
-			config.planCalcScore().addActivityParams( params );
-		}
-		for ( long ii = 600 ; ii <= 97200; ii+=600 ) {
-			final ActivityParams params = new ActivityParams( "leisure_" + ii + ".0" ) ;
-			params.setTypicalDuration( ii );
-			config.planCalcScore().addActivityParams( params );
-		}
-		for ( long ii = 600 ; ii <= 97200; ii+=600 ) {
-			final ActivityParams params = new ActivityParams( "shopping_" + ii + ".0" ) ;
-			params.setTypicalDuration( ii );
-			config.planCalcScore().addActivityParams( params );
-		}
-		for ( long ii = 600 ; ii <= 97200; ii+=600 ) {
-			final ActivityParams params = new ActivityParams( "other_" + ii + ".0" ) ;
-			params.setTypicalDuration( ii );
-			config.planCalcScore().addActivityParams( params );
-		}
-		{
-			final ActivityParams params = new ActivityParams( "freight" ) ;
-			params.setTypicalDuration( 12.*3600. );
-			config.planCalcScore().addActivityParams( params );
-		}
-		return config ;
-	}
 }
 
