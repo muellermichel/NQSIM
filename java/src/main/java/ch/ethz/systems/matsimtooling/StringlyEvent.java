@@ -1,5 +1,6 @@
 package ch.ethz.systems.matsimtooling;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 public class StringlyEvent {
@@ -15,65 +16,66 @@ public class StringlyEvent {
     }
 
     @JacksonXmlProperty(isAttribute = true)
-    public String time;
+    public String time; // --> payload 0
 
     @JacksonXmlProperty(isAttribute = true)
-    public String type;
+    public String type; // --> header
 
     @JacksonXmlProperty(isAttribute = true)
-    public String person;
+    public String person; // --> payload 1
 
     @JacksonXmlProperty(isAttribute = true)
-    public String link;
+    public String link; // --> payload 2
 
     @JacksonXmlProperty(isAttribute = true)
-    public String actType;
+    public String actType; // --> header + payload 3
 
     @JacksonXmlProperty(isAttribute = true)
-    public String legMode;
+    public String legMode; // --> header
 
     @JacksonXmlProperty(isAttribute = true)
-    public String vehicle;
+    public String vehicle; // --> payload 4
 
     @JacksonXmlProperty(isAttribute = true)
-    public String facility;
+    public String facility; // --> payload 5
 
     @JacksonXmlProperty(isAttribute = true)
-    public String delay;
+    public String delay; // --> payload 6
 
     @JacksonXmlProperty(isAttribute = true)
-    public String networkMode;
+    public String networkMode; // --> header
 
     @JacksonXmlProperty(isAttribute = true)
-    public String relativePosition;
+    public String relativePosition; // --> payload 7
 
     @JacksonXmlProperty(isAttribute = true)
-    public String distance;
+    public String distance; // --> payload 8
 
     @JacksonXmlProperty(isAttribute = true)
-    public String driverId;
+    public String driverId; // --> payload 9
 
     @JacksonXmlProperty(isAttribute = true)
-    public String vehicleId;
+    public String vehicleId; // --> payload 10
 
     @JacksonXmlProperty(isAttribute = true)
-    public String transitLineId;
+    public String transitLineId; // --> payload 11
 
     @JacksonXmlProperty(isAttribute = true)
-    public String transitRouteId;
+    public String transitRouteId; // --> payload 12
 
     @JacksonXmlProperty(isAttribute = true)
-    public String departureId;
+    public String departureId; // --> payload 13
 
     @JacksonXmlProperty(isAttribute = true)
-    public String agent;
+    public String agent; // --> payload 14
 
     @JacksonXmlProperty(isAttribute = true)
-    public String atStop;
+    public String atStop; // --> payload 15
 
     @JacksonXmlProperty(isAttribute = true)
-    public String destinationStop;
+    public String destinationStop; // --> payload 16
 
+    @JsonIgnore
     public boolean equals(StringlyEvent ref, boolean exactTimeRequired) {
         if (exactTimeRequired && !isEquivalent(time, ref.time)) {
             return false;
@@ -99,6 +101,18 @@ public class StringlyEvent {
             && isEquivalent(destinationStop, ref.destinationStop);
     }
 
+    @JsonIgnore
+    public String getStringHeader() {
+        return String.format(
+            "t=%s:a=%s:l=%s:n=%s",
+            this.type,
+            this.actType,
+            this.legMode,
+            this.networkMode
+        );
+    }
+
+    @JsonIgnore
     public String toString() {
         if (transitLineId == null) {
             if (facility == null) {

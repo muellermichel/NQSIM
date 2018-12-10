@@ -7,6 +7,7 @@ public class EventValidationTest {
             StringlyEventlogTool.writeXMLFile("sample-events-output.xml", events);
             StringlyEvents newEvents = StringlyEventlogTool.readXMLFile("sample-events-output.xml");
             StringlyEventlogTool.validate(newEvents, events, true);
+            StringlyEventlogTool.printEventTypesAndExamples(events);
         }
         catch (ValidationException e) {
             throw new RuntimeException(e);
@@ -64,6 +65,7 @@ public class EventValidationTest {
             StringlyEvents newEvents = StringlyEventlogTool.readXMLFile("berlin-events-output.xml");
             System.out.println("validating the two versions");
             StringlyEventlogTool.validate(newEvents, events, true);
+            StringlyEventlogTool.printEventTypesAndExamples(events);
         }
         catch (ValidationException e) {
             throw new RuntimeException(e);

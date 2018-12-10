@@ -9,7 +9,15 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-
+class EventTypeExtractor {
+    static Map<String, StringlyEvent> extractEventExamplesByHeader(StringlyEvents events) {
+        Map<String, StringlyEvent> result = new TreeMap<>();
+        for (StringlyEvent event:events.events) {
+            result.putIfAbsent(event.getStringHeader(), event);
+        }
+        return result;
+    }
+}
 
 class EventValidator {
     private Map<String, List<StringlyEvent>> eventsByPerson;
@@ -17,7 +25,6 @@ class EventValidator {
     EventValidator(StringlyEvents events) throws ValidationException {
         this.eventsByPerson = new HashMap<>();
         for (StringlyEvent event:events.events) {
-
             String agentIdentifier = event.person;
             if (agentIdentifier == null) {
                 agentIdentifier = event.vehicle;
@@ -31,7 +38,6 @@ class EventValidator {
             if (agentIdentifier == null) {
                 throw new ValidationException("event cannot be represented as there is no agent identifier: " + event.toString());
             }
-
             List<StringlyEvent> eventsForPerson = eventsByPerson.computeIfAbsent(
                 agentIdentifier,
                 k -> new ArrayList<>()
@@ -129,8 +135,22 @@ public final class StringlyEventlogTool {
         }
     }
 
-   public static void validate(StringlyEvents events, StringlyEvents refEvents, boolean exactTimingRequired) throws ValidationException {
+    public static void printEventTypesAndExamples(StringlyEvents events) {
+        Map<String,StringlyEvent> sampleEventsByHeader = EventTypeExtractor.extractEventExamplesByHeader(events);
+        int typeIdx = 0;
+        for (Map.Entry<String, StringlyEvent> e:sampleEventsByHeader.entrySet()) {
+            System.out.println(String.format(
+                "%d: %s  ->  %s",
+                typeIdx,
+                e.getKey(),
+                e.getValue().toString()
+            ));
+            typeIdx++;
+        }
+    }
+
+    public static void validate(StringlyEvents events, StringlyEvents refEvents, boolean exactTimingRequired) throws ValidationException {
         EventValidator eventValidator = new EventValidator(events);
         eventValidator.validate(new EventValidator(refEvents), exactTimingRequired);
-   }
+    }
 }
